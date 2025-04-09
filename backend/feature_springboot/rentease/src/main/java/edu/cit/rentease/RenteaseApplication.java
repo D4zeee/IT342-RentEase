@@ -8,6 +8,7 @@ public class RenteaseApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(RenteaseApplication.class, args);
+		System.out.println("Test!");
 	}
 
 }
