@@ -13,7 +13,6 @@ function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSignIn = () => {
-    // Handle your Google sign-in logic here
     navigate("/dashboard")
   }
 

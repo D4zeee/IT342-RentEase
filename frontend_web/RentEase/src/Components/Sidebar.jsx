@@ -70,7 +70,7 @@ function Sidebar() {
           }
         >
           <CalendarIcon className="w-5 h-5" />
-          <span className="font-medium">Calendar</span>
+          <span className="font-medium">Reminder</span>
         </NavLink>
       </nav>
 
