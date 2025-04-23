@@ -1,6 +1,8 @@
 package com.it342_rentease.it342_rentease_project.model;
 
 import jakarta.persistence.*;
+import com.it342_rentease.it342_rentease_project.model.Room;
+
 
 import java.time.LocalDate;
 
@@ -9,58 +11,40 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long paymentId;
+    private int paymentId;
 
-    @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false)
-    private Room room;
-
-    private double amount;
-    private LocalDate dueDate;
-    private LocalDate paidDate;
+    private float amount;
     private String status;
-    private String proofOfPaymentUrl;
-    private String paymentProvider;
+    private String paymentMethod;
+    
+    @ManyToOne
+@JoinColumn(name = "room_id", nullable = false)
+private Room room;
 
-    // Getters and Setters
-    public Long getPaymentId() {
+    public Payment() {
+    }
+
+    public Payment(int bookingId, float amount, String status, String paymentMethod) {
+        this.amount = amount;
+        this.status = status;
+        this.paymentMethod = paymentMethod;
+    }
+
+    public int getPaymentId() {
         return paymentId;
     }
 
-    public void setPaymentId(Long paymentId) {
+
+    public void setPaymentId(int paymentId) {
         this.paymentId = paymentId;
     }
 
-    public Room getRoom() {
-        return room;
-    }
-
-    public void setRoom(Room room) {
-        this.room = room;
-    }
-
-    public double getAmount() {
+    public float getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(float amount) {
         this.amount = amount;
-    }
-
-    public LocalDate getDueDate() {
-        return dueDate;
-    }
-
-    public void setDueDate(LocalDate dueDate) {
-        this.dueDate = dueDate;
-    }
-
-    public LocalDate getPaidDate() {
-        return paidDate;
-    }
-
-    public void setPaidDate(LocalDate paidDate) {
-        this.paidDate = paidDate;
     }
 
     public String getStatus() {
@@ -71,19 +55,20 @@ public class Payment {
         this.status = status;
     }
 
-    public String getProofOfPaymentUrl() {
-        return proofOfPaymentUrl;
+    public String getPaymentMethod() {
+        return paymentMethod;
     }
 
-    public void setProofOfPaymentUrl(String proofOfPaymentUrl) {
-        this.proofOfPaymentUrl = proofOfPaymentUrl;
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
-    public String getPaymentProvider() {
-        return paymentProvider;
+    public Room getRoom() {
+        return room;
     }
-
-    public void setPaymentProvider(String paymentProvider) {
-        this.paymentProvider = paymentProvider;
+    
+    public void setRoom(Room room) {
+        this.room = room;
     }
+    
 }

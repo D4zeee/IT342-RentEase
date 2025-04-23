@@ -7,48 +7,65 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/payments")
+@CrossOrigin(origins = "http://localhost:5173")
 public class PaymentController {
 
     @Autowired
     private PaymentService paymentService;
 
-    @PostMapping
-    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
-        try {
-            Payment saved = paymentService.createPayment(payment);
-            return new ResponseEntity<>(saved, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/intent")
+    public ResponseEntity<Map<String, Object>> createPaymentIntent(@RequestBody Map<String, String> request) {
+        String amount = request.get("amount");
+
+        if (amount == null || !amount.matches("\\d+")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or missing amount"));
         }
+
+        Map<String, Object> response = paymentService.createPaymentIntent(amount);
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/room/{roomId}")
-    public ResponseEntity<List<Payment>> getPaymentsByRoomId(@PathVariable Long roomId) {
-        List<Payment> payments = paymentService.getPaymentsByRoomId(roomId);
-        if (payments.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @PostMapping("/method")
+    public ResponseEntity<Map<String, Object>> createPaymentMethod(@RequestBody Map<String, String> request) {
+        String name = request.get("name");
+        String email = request.get("email");
+        String phone = request.get("phone");
+        String type = request.get("type");
+
+        if (name == null || email == null || phone == null || type == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing required fields"));
         }
-        return new ResponseEntity<>(payments, HttpStatus.OK);
+
+        Map<String, Object> response = paymentService.createPaymentMethod(name, email, phone, type);
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Payment> getPaymentById(@PathVariable Long id) {
-        Optional<Payment> payment = paymentService.getPaymentById(id);
-        return payment.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                      .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
+    @PostMapping("/intent/attach/{id}")
+    public ResponseEntity<Map<String, Object>> attachPaymentIntent(
+            @PathVariable("id") String intentId,
+            @RequestBody Map<String, String> request) {
+        String paymentMethod = request.get("payment_method");
+        String clientKey = request.get("client_key");
+        String returnUrl = request.get("return_url");
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deletePayment(@PathVariable Long id) {
-        if (paymentService.deletePayment(id)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        if (paymentMethod == null || clientKey == null || returnUrl == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing required fields"));
         }
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+
+        Map<String, Object> response = paymentService.attachPaymentIntent(intentId, paymentMethod, clientKey,
+                returnUrl);
+        return ResponseEntity.ok(response);
     }
 
-    
+    @GetMapping("/intent/{id}")
+    public ResponseEntity<Map<String, Object>> retrievePaymentIntent(@PathVariable("id") String intentId) {
+        Map<String, Object> response = paymentService.retrievePaymentIntent(intentId);
+        return ResponseEntity.ok(response);
+    }
+
 }

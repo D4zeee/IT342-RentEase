@@ -1,28 +1,60 @@
 package com.it342_rentease.it342_rentease_project.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.it342_rentease.it342_rentease_project.model.Room;
+import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 import com.it342_rentease.it342_rentease_project.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/rooms")
+@CrossOrigin(origins = "http://localhost:5173")
 public class RoomController {
 
     @Autowired
     private RoomService roomService;
 
+    @Autowired
+    private RoomRepository roomRepository;
+
     @PostMapping
-    public ResponseEntity<Room> addRoom(@RequestBody Room room) {
+    public ResponseEntity<Room> addRoom(
+            @RequestPart("room") String roomJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         try {
-            Room savedRoom = roomService.createRoom(room);
+            System.out.println("Received POST request to add a room");
+            System.out.println("Room JSON: " + roomJson);
+            if (images != null) {
+                System.out.println("Number of images received: " + images.size());
+                for (int i = 0; i < images.size(); i++) {
+                    System.out.println("Image " + i + ": " + images.get(i).getOriginalFilename());
+                }
+            } else {
+                System.out.println("No images received");
+            }
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            Room room = objectMapper.readValue(roomJson, Room.class);
+
+            Room savedRoom = roomService.createRoom(room, images);
+            System.out.println("Room created with ID: " + savedRoom.getRoomId());
+
             return new ResponseEntity<>(savedRoom, HttpStatus.CREATED);
         } catch (Exception e) {
+            System.err.println("Error adding room: " + e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -30,43 +62,144 @@ public class RoomController {
     @GetMapping
     public ResponseEntity<List<Room>> getAllRooms() {
         try {
+            System.out.println("Received GET request to fetch all rooms");
             List<Room> rooms = roomService.getAllRooms();
             if (rooms.isEmpty()) {
+                System.out.println("No rooms found");
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
+            System.out.println("Returning " + rooms.size() + " rooms");
             return new ResponseEntity<>(rooms, HttpStatus.OK);
         } catch (Exception e) {
+            System.err.println("Error fetching all rooms: " + e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/owner/{ownerId}/unavailable")
+    public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long ownerId) {
+        try {
+            System.out.println("Received GET request for unavailable rooms for owner ID: " + ownerId);
+            List<Room> rooms = roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
+            System.out.println("Returning " + rooms.size() + " unavailable rooms");
+            return ResponseEntity.ok(rooms);
+        } catch (Exception e) {
+            System.err.println("Error fetching unavailable rooms for owner ID " + ownerId + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("/{roomId}")
     public ResponseEntity<Room> getRoomById(@PathVariable("roomId") Long roomId) {
-        Optional<Room> roomData = roomService.getRoomById(roomId);
-        if (roomData.isPresent()) {
-            return new ResponseEntity<>(roomData.get(), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        try {
+            System.out.println("Received GET request for room ID: " + roomId);
+            Optional<Room> roomData = roomService.getRoomById(roomId);
+            if (roomData.isPresent()) {
+                System.out.println("Room found with ID: " + roomId);
+                return new ResponseEntity<>(roomData.get(), HttpStatus.OK);
+            } else {
+                System.out.println("Room not found with ID: " + roomId);
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching room with ID " + roomId + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/{roomId}")
-    public ResponseEntity<Room> updateRoom(@PathVariable("roomId") Long roomId, @RequestBody Room room) {
-        Room updatedRoom = roomService.updateRoom(roomId, room);
-        if (updatedRoom != null) {
-            return new ResponseEntity<>(updatedRoom, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public ResponseEntity<Room> updateRoom(
+            @PathVariable("roomId") Long roomId,
+            @RequestPart("room") String roomJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        try {
+            System.out.println("Received PUT request to update room ID: " + roomId);
+            System.out.println("Room JSON: " + roomJson);
+            if (images != null) {
+                System.out.println("Number of images received: " + images.size());
+                for (int i = 0; i < images.size(); i++) {
+                    System.out.println("Image " + i + ": " + images.get(i).getOriginalFilename());
+                }
+            } else {
+                System.out.println("No images received");
+            }
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            Room room = objectMapper.readValue(roomJson, Room.class);
+
+            Room updatedRoom = roomService.updateRoom(roomId, room, images);
+            if (updatedRoom != null) {
+                System.out.println("Room updated with ID: " + roomId);
+                return new ResponseEntity<>(updatedRoom, HttpStatus.OK);
+            } else {
+                System.out.println("Room not found with ID: " + roomId);
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating room with ID " + roomId + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @DeleteMapping("/{roomId}")
     public ResponseEntity<HttpStatus> deleteRoom(@PathVariable("roomId") Long roomId) {
-        if (roomService.deleteRoom(roomId)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } else {
+        try {
+            System.out.println("Received DELETE request for room ID: " + roomId);
+            if (roomService.deleteRoom(roomId)) {
+                System.out.println("Room deleted with ID: " + roomId);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            } else {
+                System.out.println("Room not found with ID: " + roomId);
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (Exception e) {
+            System.err.println("Error deleting room with ID " + roomId + ": " + e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-} 
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<Room>> getRoomsByOwnerId(@PathVariable("ownerId") Long ownerId) {
+        try {
+            System.out.println("Received GET request for rooms by owner ID: " + ownerId);
+            List<Room> rooms = roomService.getRoomsByOwnerId(ownerId);
+            if (rooms.isEmpty()) {
+                System.out.println("No rooms found for owner ID: " + ownerId);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            System.out.println("Returning " + rooms.size() + " rooms for owner ID: " + ownerId);
+            return new ResponseEntity<>(rooms, HttpStatus.OK);
+        } catch (Exception e) {
+            System.err.println("Error fetching rooms for owner ID " + ownerId + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/images/{imageName:.+}")
+    public ResponseEntity<Resource> getImage(@PathVariable String imageName) {
+        try {
+            System.out.println("Received request for image: " + imageName);
+            Path filePath = Paths.get("uploads").resolve(imageName).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            if (resource.exists()) {
+                System.out.println("Serving image: " + filePath);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG) // Adjust based on image type
+                        .body(resource);
+            } else {
+                System.out.println("Image not found: " + filePath);
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            System.err.println("Error serving image " + imageName + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+}

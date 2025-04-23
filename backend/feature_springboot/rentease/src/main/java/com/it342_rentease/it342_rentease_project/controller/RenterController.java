@@ -29,7 +29,7 @@ public class RenterController {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @PostMapping
+    @PostMapping("/register")
     public Renter registerRenter(@RequestBody Renter renter) {
         if (renterRepository.existsByEmail(renter.getEmail())) {
             throw new RuntimeException("Email already in use.");

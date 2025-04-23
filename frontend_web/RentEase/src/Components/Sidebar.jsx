@@ -1,8 +1,17 @@
-import { NavLink } from "react-router-dom"
-import { Typography } from "@material-tailwind/react"
-import { HomeIcon, BedDoubleIcon, CreditCardIcon, CalendarIcon, LogOutIcon, Settings } from "lucide-react"
+import { NavLink, useNavigate } from "react-router-dom";
+import { Typography } from "@material-tailwind/react";
+import { HomeIcon, BedDoubleIcon, CreditCardIcon, CalendarIcon, LogOutIcon, Settings } from "lucide-react";
+import Cookies from "js-cookie"; 
+
 
 function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    Cookies.remove("token");
+    navigate("/login");
+  };
+
   return (
     <div className="fixed top-0 left-0 w-[250px] h-screen bg-white shadow-md flex flex-col p-5 overflow-y-auto z-30">
       {/* Brand / Logo */}
@@ -93,16 +102,16 @@ function Sidebar() {
           <span className="font-medium">Settings</span>
         </NavLink>
 
-        <NavLink
-          to="/logout"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-300"
+        <div
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-300 cursor-pointer"
         >
           <LogOutIcon className="w-5 h-5" />
           <span className="font-medium">Logout</span>
-        </NavLink>
+        </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Sidebar
+export default Sidebar;

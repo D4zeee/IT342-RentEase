@@ -1,32 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { Card, CardBody, Typography, Button } from "@material-tailwind/react"
-import { ArrowRightIcon, UserIcon, KeyIcon, CalendarIcon, IdentificationIcon } from "@heroicons/react/24/outline"
+import { ArrowRightIcon, KeyIcon, IdentificationIcon } from "@heroicons/react/24/outline"
+import axios from "axios"
+import Cookies from "js-cookie"
 
 function RegisterPage() {
   const navigate = useNavigate()
-  
+
   const [formData, setFormData] = useState({
-    name: "",
-    age: "",
     username: "",
     password: "",
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")  // New state for success message
+
+  // Check if the user is already logged in by checking for the token in cookies
+  useEffect(() => {
+    const token = Cookies.get("token")
+    if (token) {
+      navigate("/dashboard")
+    }
+  }, [navigate])
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData({ 
-      ...formData, 
-      [name]: value 
+    setFormData({
+      ...formData,
+      [name]: value
     })
-    
-    // Clear error when user starts typing
+
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -37,39 +45,47 @@ function RegisterPage() {
 
   const validate = () => {
     const newErrors = {}
-    
-    if (!formData.name.trim()) newErrors.name = "Name is required"
-    if (!formData.age) newErrors.age = "Age is required"
-    else if (parseInt(formData.age) < 18) newErrors.age = "Must be 18 or older"
     if (!formData.username.trim()) newErrors.username = "Username is required"
     if (!formData.password) newErrors.password = "Password is required"
     else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters"
-    
+
     return newErrors
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     const validationErrors = validate()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-    
     setIsSubmitting(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Registering user:", formData)
+
+    try {
+      const response = await axios.post("http://localhost:8080/owners/register", formData)
+      console.log(response.data)
+
+      setSuccessMessage("Registration successful! Redirecting to login...")
+
       setIsSubmitting(false)
-      navigate("/login")
-    }, 1500)
+      setTimeout(() => {
+        navigate("/login")
+      }, 1000)
+    } catch (error) {
+      setIsSubmitting(false)
+
+      if (error.response && error.response.status === 409) {
+        setErrors({ username: "Username already taken" })
+      } else {
+        setErrors({ general: "An error occurred. Please try again." })
+      }
+    }
   }
 
   return (
     <div className="h-screen w-full fixed flex justify-center items-center">
-      {/* Background with blur and overlay */}
+
       <div className="absolute inset-0 z-[-1]">
         <div
           className="absolute inset-0 bg-cover bg-center blur-[5px]"
@@ -78,7 +94,6 @@ function RegisterPage() {
         <div className="absolute inset-0 bg-black/30"></div>
       </div>
 
-      {/* Registration Card */}
       <Card 
         className="w-[90%] max-w-[450px] z-10 shadow-xl overflow-hidden"
         style={{ 
@@ -100,47 +115,18 @@ function RegisterPage() {
             </Link>
           </div>
 
+          {/* sUCCESS MESSAGE */}
+          {successMessage && (
+            <div className="bg-green-500 text-white p-2 rounded-lg mb-4">
+              <span>{successMessage}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="mx-auto w-[85%] flex flex-col gap-5">
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <UserIcon className="h-5 w-5" />
-              </div>
-              <input
-                type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
-                  errors.name ? 'border-red-500' : 'border-transparent'
-                } bg-[#747775]/90 text-white placeholder-gray-300 outline-none focus:ring-2 focus:ring-teal-500/50 transition-all`}
-              />
-              {errors.name && (
-                <p className="text-red-400 text-xs mt-1 ml-2">{errors.name}</p>
-              )}
-            </div>
 
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <CalendarIcon className="h-5 w-5" />
-              </div>
-              <input
-                type="number"
-                name="age"
-                placeholder="Age"
-                value={formData.age}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
-                  errors.age ? 'border-red-500' : 'border-transparent'
-                } bg-[#747775]/90 text-white placeholder-gray-300 outline-none focus:ring-2 focus:ring-teal-500/50 transition-all`}
-              />
-              {errors.age && (
-                <p className="text-red-400 text-xs mt-1 ml-2">{errors.age}</p>
-              )}
-            </div>
-
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            {/* Username */}
+            <div className="relative"> 
+              <div className="absolute top-4 left-3 text-gray-400">
                 <IdentificationIcon className="h-5 w-5" />
               </div>
               <input
@@ -158,8 +144,9 @@ function RegisterPage() {
               )}
             </div>
 
+            {/* Password */}
             <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="absolute top-4 left-3 text-gray-400">
                 <KeyIcon className="h-5 w-5" />
               </div>
               <input
@@ -210,4 +197,3 @@ function RegisterPage() {
 }
 
 export default RegisterPage
-

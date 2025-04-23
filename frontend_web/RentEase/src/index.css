@@ -1,7 +1,1 @@
 @import "tailwindcss";
-
-/* Invert the calendar icon color for WebKit (Chrome, Safari, Edge) */
-input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1); /* Inverts the black icon to white */
-    opacity: 1;
-  }

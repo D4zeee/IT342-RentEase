@@ -3,4 +3,11 @@
     background-color: #f8f9fa;
     min-height: 100vh;
   }
+  .receipt {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f7f7f7;
+  }
   

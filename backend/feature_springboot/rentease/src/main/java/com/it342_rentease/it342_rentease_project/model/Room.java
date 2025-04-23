@@ -1,7 +1,14 @@
-// Room.java (model)
 package com.it342_rentease.it342_rentease_project.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Room {
@@ -10,18 +17,23 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long roomId;
 
-    @Column(name = "owner_id")
-    private Long ownerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    @JsonBackReference
+    private Owner owner;
 
+    @NotNull(message = "Unit name is required")
     @Column(name = "unit_name")
     private String unitName;
 
+    @Positive(message = "Number of rooms must be positive")
     @Column(name = "number_of_rooms")
     private int numberOfRooms;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @PositiveOrZero(message = "Rental fee must be non-negative")
     @Column(name = "rental_fee")
     private double rentalFee;
 
@@ -36,7 +48,31 @@ public class Room {
     @Column(name = "postal_code")
     private String postalCode;
 
-    // Getters and Setters
+    @Column(name = "status")
+    private String status = "available"; // default value
+
+    // New field to store image paths
+    @ElementCollection
+    @CollectionTable(name = "room_images", joinColumns = @JoinColumn(name = "room_id"))
+    @Column(name = "image_path")
+    private List<String> imagePaths = new ArrayList<>();
+
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public List<String> getImagePaths() {
+        return imagePaths;
+    }
+
+    public void setImagePaths(List<String> imagePaths) {
+        this.imagePaths = imagePaths;
+    }
+
     public Long getRoomId() {
         return roomId;
     }
@@ -45,12 +81,12 @@ public class Room {
         this.roomId = roomId;
     }
 
-    public Long getOwnerId() {
-        return ownerId;
+    public Owner getOwner() {
+        return owner;
     }
 
-    public void setOwnerId(Long ownerId) {
-        this.ownerId = ownerId;
+    public void setOwner(Owner owner) {
+        this.owner = owner;
     }
 
     public String getUnitName() {
