@@ -11,6 +11,7 @@ import PrivateRoute from './Components/PrivateRoute';
 import PayMongoTest from './Components/PayMongoTest';
 import PaymentSuccess from './Components/PaymentSuccess';
 import RoomBookingMobile from './Components/RoomBookingMobile';
+import Notification from './Components/Notification'; 
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/test-payment" element={<PayMongoTest />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/rent-room" element={<RoomBookingMobile />} />
+        
 
 
 
@@ -61,6 +63,15 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+  path="/notifications"
+  element={
+    <PrivateRoute>
+      <Notification />
+    </PrivateRoute>
+  }
+/>
+
         </Route>
       </Routes>
     </Router>

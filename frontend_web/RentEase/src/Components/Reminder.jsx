@@ -63,14 +63,21 @@ function Reminder() {
   useEffect(() => {
     if (!ownerId) return
     const token = Cookies.get("token")
-
+  
     axios
       .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setReminders(res.data))
+      .then((res) => {
+        // only include manually created reminders
+        const manualReminders = res.data.filter(
+          (reminder) => !reminder.note?.includes("Payment is due")
+        )
+        setReminders(manualReminders)
+      })
       .catch((err) => console.error("Failed to fetch reminders", err))
   }, [ownerId])
+  
 
   const handleModalClose = (e) => {
     if (e.target === e.currentTarget) {
@@ -170,7 +177,7 @@ function Reminder() {
         ) : (
           <div className="w-full space-y-4">
             {reminders
-              .filter((reminder) => reminder.note !== "System generated")
+              .filter((reminder) => !reminder.note?.includes("Payment is due"))
               .map((reminder) => (
                 <div
                   key={reminder.reminderId}

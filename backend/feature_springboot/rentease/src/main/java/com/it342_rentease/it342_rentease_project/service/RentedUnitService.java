@@ -40,27 +40,36 @@ public class RentedUnitService {
             throw new IllegalStateException("This room is already rented.");
         }
     
-        // Mark as rented
+        // Mark room as rented
         room.setStatus("rented");
         roomRepository.save(room);
     
         // Save rented unit
-        rentedUnit.setRoom(room); // ensure full room object
+        rentedUnit.setRoom(room);
         RentedUnit savedUnit = rentedUnitRepository.save(rentedUnit);
     
-        // Create payment reminder
-        PaymentReminder reminder = new PaymentReminder();
-        reminder.setRoom(room);
-        reminder.setRenter(rentedUnit.getRenter());
-        reminder.setOwner(room.getOwner()); // ✅ Now this won't be null
-        reminder.setDueDate(rentedUnit.getStartDate());
-        reminder.setRentalFee(room.getRentalFee());
-        reminder.setNote("Payment is due on " + rentedUnit.getStartDate());
+        // 🔍 Check if reminder already exists for this renter-room pair
+        boolean reminderExists = paymentReminderRepository
+            .findByRenterRenterId(rentedUnit.getRenter().getRenterId())
+            .stream()
+            .anyMatch(r -> r.getRoom().getRoomId().equals(roomId));
     
-        paymentReminderRepository.save(reminder);
+        if (!reminderExists) {
+            // ✅ Create new reminder
+            PaymentReminder reminder = new PaymentReminder();
+            reminder.setRoom(room);
+            reminder.setRenter(rentedUnit.getRenter());
+            reminder.setOwner(room.getOwner());
+            reminder.setDueDate(rentedUnit.getStartDate());
+            reminder.setRentalFee(room.getRentalFee());
+            reminder.setNote("Payment is due on " + rentedUnit.getStartDate());
+    
+            paymentReminderRepository.save(reminder);
+        }
     
         return savedUnit;
     }
+    
     
 
     

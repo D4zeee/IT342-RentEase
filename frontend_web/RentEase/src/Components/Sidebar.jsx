@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { Typography } from "@material-tailwind/react";
-import { HomeIcon, BedDoubleIcon, CreditCardIcon, CalendarIcon, LogOutIcon, Settings } from "lucide-react";
+import { HomeIcon, BedDoubleIcon, CreditCardIcon, CalendarIcon, LogOutIcon, Settings, BellRing } from "lucide-react";
 import Cookies from "js-cookie"; 
 
 
@@ -81,7 +81,26 @@ function Sidebar() {
           <CalendarIcon className="w-5 h-5" />
           <span className="font-medium">Reminder</span>
         </NavLink>
+
+
+        <NavLink
+  to="/notifications"
+  className={({ isActive }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+      isActive
+        ? "bg-gradient-to-r from-[#5885AF] to-[#274472] text-white shadow-sm"
+        : "text-[#087592] hover:bg-gray-100"
+    }`
+  }
+>
+  <BellRing className="w-5 h-5" />
+  <span className="font-medium">Notifications</span>
+</NavLink>
+
       </nav>
+
+
+
 
       {/* Spacer to push logout to bottom */}
       <div className="flex-grow"></div>

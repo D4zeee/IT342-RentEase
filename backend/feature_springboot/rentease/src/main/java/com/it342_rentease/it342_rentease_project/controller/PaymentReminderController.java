@@ -2,6 +2,7 @@ package com.it342_rentease.it342_rentease_project.controller;
 
 import com.it342_rentease.it342_rentease_project.model.PaymentReminder;
 import com.it342_rentease.it342_rentease_project.model.Room;
+import com.it342_rentease.it342_rentease_project.repository.PaymentReminderRepository;
 import com.it342_rentease.it342_rentease_project.repository.RentedUnitRepository;
 import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 import com.it342_rentease.it342_rentease_project.service.PaymentReminderService;
@@ -25,6 +26,11 @@ public class PaymentReminderController {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+private PaymentReminderRepository paymentReminderRepository; // ✅ correct spelling
+
+
 
 @PostMapping
 public ResponseEntity<?> create(@RequestBody PaymentReminder reminder) {
@@ -84,4 +90,20 @@ public ResponseEntity<List<PaymentReminder>> getByOwnerId(@PathVariable Long own
         paymentReminderService.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+     //for the status in the notifications
+    @PatchMapping("/{id}/status")
+public ResponseEntity<?> updateReminderStatus(@PathVariable Long id, @RequestParam String status) {
+    Optional<PaymentReminder> optionalReminder = paymentReminderRepository.findById(id);
+    if (optionalReminder.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
+
+   
+    PaymentReminder reminder = optionalReminder.get();
+    reminder.setStatus(status);
+    paymentReminderRepository.save(reminder);
+    return ResponseEntity.ok("Status updated to " + status);
+}
+
 }

@@ -39,7 +39,7 @@ public class securityConfig {
                     .requestMatchers("/rooms/**").permitAll()
                     .requestMatchers("/rented_units/**").permitAll()
                     .requestMatchers("/payments/**").permitAll()
-                    .requestMatchers("/payment_reminders/**").permitAll()
+                    .requestMatchers("/payment_reminders/**").authenticated()
                     .requestMatchers("/owners").permitAll()
                     .requestMatchers("/owners/current-user").authenticated()  // Explicitly protect this endpoint
                     .anyRequest().authenticated()
