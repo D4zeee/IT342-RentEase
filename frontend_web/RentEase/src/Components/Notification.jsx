@@ -25,33 +25,7 @@ function Notification() {
       .catch((err) => console.error("Error fetching current owner:", err))
   }, [])
 
-  //status for the notification
-  const updateStatus = (id, status) => {
-    const token = Cookies.get("token")
-  
-    axios
-      .patch(
-        `http://localhost:8080/payment_reminders/${id}/status?status=${status}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // ✅ Include token
-          },
-        }
-      )
-      .then(() => {
-        // Optional UI update
-        setReminders((prev) =>
-          prev.map((r) =>
-            r.reminderId === id ? { ...r, status } : r
-          )
-        )
-      })
-      .catch((err) => {
-        console.error("Failed to update status:", err)
-        alert("Update failed. You might not be logged in.")
-      })
-  }
+ 
   
 
   useEffect(() => {
@@ -105,19 +79,6 @@ function Notification() {
               <Typography className="text-gray-600 mt-2 text-sm">
                 {reminder.note}
               </Typography>
-
-              <button
-                className="text-green-600 hover:underline text-sm"
-                onClick={() => updateStatus(reminder.reminderId, "approved")}
-                >
-                Approve
-                </button>
-                <button
-                className="text-red-600 hover:underline text-sm ml-2"
-                onClick={() => updateStatus(reminder.reminderId, "denied")}
-                >
-                Deny
-                </button>
 
             </div>
             

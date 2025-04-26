@@ -21,8 +21,7 @@ public class RentedUnit {
     private LocalDate startDate;
     private LocalDate endDate;
 
-    @Column(nullable = false)
-    private String status = "pending";  // default value when created
+    
 
 
     public Long getRentedUnitId() {

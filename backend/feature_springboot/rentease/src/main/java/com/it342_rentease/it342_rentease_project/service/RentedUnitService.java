@@ -9,6 +9,7 @@ import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +26,7 @@ public class RentedUnitService {
     @Autowired
     private PaymentReminderRepository paymentReminderRepository;
 
-
+    @Transactional 
     public RentedUnit save(RentedUnit rentedUnit) {
         Long roomId = rentedUnit.getRoom().getRoomId();
     
@@ -63,6 +64,8 @@ public class RentedUnitService {
             reminder.setDueDate(rentedUnit.getStartDate());
             reminder.setRentalFee(room.getRentalFee());
             reminder.setNote("Payment is due on " + rentedUnit.getStartDate());
+           
+
     
             paymentReminderRepository.save(reminder);
         }

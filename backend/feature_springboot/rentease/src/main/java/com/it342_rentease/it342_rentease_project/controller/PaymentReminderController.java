@@ -91,19 +91,6 @@ public ResponseEntity<List<PaymentReminder>> getByOwnerId(@PathVariable Long own
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-     //for the status in the notifications
-    @PatchMapping("/{id}/status")
-public ResponseEntity<?> updateReminderStatus(@PathVariable Long id, @RequestParam String status) {
-    Optional<PaymentReminder> optionalReminder = paymentReminderRepository.findById(id);
-    if (optionalReminder.isEmpty()) {
-        return ResponseEntity.notFound().build();
-    }
-
-   
-    PaymentReminder reminder = optionalReminder.get();
-    reminder.setStatus(status);
-    paymentReminderRepository.save(reminder);
-    return ResponseEntity.ok("Status updated to " + status);
-}
+ 
 
 }
