@@ -40,21 +40,21 @@ function Reminder() {
   }, [])
 
   useEffect(() => {
-    if (!ownerId) return
-    const token = Cookies.get("token")
-
+    if (!ownerId) return;
+    const token = Cookies.get("token");
+  
     axios
       .get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setRooms(res.data)
-        console.log("Fetched unavailable rooms:", res.data)
+        setRooms(res.data);
+        console.log("Fetched unavailable rooms:", res.data);
       })
       .catch((err) => {
-        console.error("Failed to fetch unavailable rooms", err)
-      })
-  }, [ownerId])
+        console.error("Failed to fetch unavailable rooms", err); // Error logged here
+      });
+  }, [ownerId]);
 
   const handleAddClick = () => {
     setShowModal(true)

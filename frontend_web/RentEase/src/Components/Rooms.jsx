@@ -64,7 +64,7 @@ function Rooms() {
                 })
                 .then((response) => {
                     setRooms(response.data)
-                    console.log("Fetched rooms:", response.data) // Log fetched rooms for debugging
+                    console.log("Fetched rooms:", response.data)
                 })
                 .catch((error) => {
                     console.error("Error fetching rooms:", error.response?.data || error.message)
@@ -113,7 +113,7 @@ function Rooms() {
 
         // Load existing images if editing
         if (room.imagePaths && room.imagePaths.length > 0) {
-            setImagePreviews(room.imagePaths.map(path => `http://localhost:8080/rooms/images/${path.split('\\').pop()}`))
+            setImagePreviews(room.imagePaths) // Use Supabase public URLs directly
         } else {
             setImagePreviews([])
         }
@@ -156,14 +156,11 @@ function Rooms() {
         // Prepare form data to include images
         const formData = new FormData()
         formData.append("room", new Blob([JSON.stringify(roomData)], { type: "application/json" }))
-        console.log("Images to upload:", images.length)
         images.forEach((image, index) => {
-            console.log(`Appending image ${index}:`, image.name)
             formData.append("images", image)
         })
 
         if (roomToEdit) {
-            // Show save confirmation dialog
             setShowSaveConfirm(true)
         } else {
             // Add a new room
@@ -201,9 +198,7 @@ function Rooms() {
 
         const formData = new FormData()
         formData.append("room", new Blob([JSON.stringify(roomData)], { type: "application/json" }))
-        console.log("Images to upload for update:", images.length)
         images.forEach((image, index) => {
-            console.log(`Appending image ${index}:`, image.name)
             formData.append("images", image)
         })
 
@@ -240,7 +235,7 @@ function Rooms() {
                     Authorization: `Bearer ${Cookies.get("token")}`,
                 },
             })
-            .then((response) => {
+            .then(() => {
                 setRooms((prev) => prev.filter((room) => room.roomId !== roomToEdit.roomId))
                 setShowModal(false)
                 setRoomToEdit(null)
@@ -268,7 +263,6 @@ function Rooms() {
 
     return (
         <div className="relative p-4 md:p-8 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-            {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Properties</h1>
                 <p className="text-gray-600 mt-1">Manage your rental units and rooms</p>
@@ -303,7 +297,7 @@ function Rooms() {
                                 <div className="h-32 flex items-center justify-center">
                                     {room.imagePaths && room.imagePaths.length > 0 ? (
                                         <img
-                                            src={`http://localhost:8080/rooms/images/${room.imagePaths[0].split('\\').pop()}`}
+                                            src={room.imagePaths[0]}
                                             alt={room.unitName}
                                             className="w-full h-full object-cover"
                                             onError={(e) => console.error("Error loading image for room " + room.roomId + ":", e)}
@@ -367,7 +361,6 @@ function Rooms() {
                 </>
             )}
 
-            {/* Modal Section */}
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
@@ -375,7 +368,6 @@ function Rooms() {
                 >
                     <Card className="w-full max-w-md bg-white shadow-2xl rounded-xl" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6 max-h-[80vh] overflow-y-auto">
-                            {/* Header with close button */}
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <Typography variant="h5" className="font-bold text-gray-800">
@@ -393,7 +385,6 @@ function Rooms() {
                                 </button>
                             </div>
 
-                            {/* Error Message */}
                             {error && (
                                 <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-lg">
                                     <Typography variant="small" className="text-red-600">
@@ -402,15 +393,12 @@ function Rooms() {
                                 </div>
                             )}
 
-                            {/* Form Sections */}
                             <div className="space-y-6">
-                                {/* Property Details Section */}
                                 <div className="space-y-4">
                                     <Typography variant="small" className="text-gray-800 font-semibold uppercase tracking-wider">
                                         Property Details
                                     </Typography>
 
-                                    {/* Unit Name */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Unit Name <span className="text-red-500">*</span>
@@ -425,14 +413,11 @@ function Rooms() {
                                                 onChange={(e) => setUnitName(e.target.value)}
                                                 placeholder="e.g. Sunset Apartment 3B"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Number of Rooms */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Number of Rooms <span className="text-red-500">*</span>
@@ -447,14 +432,11 @@ function Rooms() {
                                                 onChange={(e) => setNumberOfRooms(e.target.value)}
                                                 placeholder="e.g. 2"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Rental Fee */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Rental Fee ($/month) <span className="text-red-500">*</span>
@@ -469,14 +451,11 @@ function Rooms() {
                                                 onChange={(e) => setRentalFee(e.target.value)}
                                                 placeholder="e.g. 1200"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Description */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Description
@@ -491,14 +470,11 @@ function Rooms() {
                                                 onChange={(e) => setDescription(e.target.value)}
                                                 placeholder="Brief description of the property"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Image Upload Section */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Property Images
@@ -542,13 +518,11 @@ function Rooms() {
                                     </div>
                                 </div>
 
-                                {/* Address Section */}
                                 <div className="space-y-4 pt-2">
                                     <Typography variant="small" className="text-gray-800 font-semibold uppercase tracking-wider">
                                         Property Address
                                     </Typography>
 
-                                    {/* Address Line 1 */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Address Line 1 <span className="text-red-500">*</span>
@@ -563,14 +537,11 @@ function Rooms() {
                                                 onChange={(e) => setAddressLine1(e.target.value)}
                                                 placeholder="Street address"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Address Line 2 */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Address Line 2
@@ -585,14 +556,11 @@ function Rooms() {
                                                 onChange={(e) => setAddressLine2(e.target.value)}
                                                 placeholder="Apt, suite, unit, etc. (optional)"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* City */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             City <span className="text-red-500">*</span>
@@ -607,14 +575,11 @@ function Rooms() {
                                                 onChange={(e) => setCity(e.target.value)}
                                                 placeholder="e.g. San Francisco"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Postal Code */}
                                     <div className="space-y-1.5">
                                         <Typography variant="small" className="text-gray-700 font-medium">
                                             Postal Code <span className="text-red-500">*</span>
@@ -629,16 +594,13 @@ function Rooms() {
                                                 onChange={(e) => setPostalCode(e.target.value)}
                                                 placeholder="e.g. 94103"
                                                 className="pl-10 border-gray-300 focus:border-cyan-500"
-                                                labelProps={{
-                                                    className: "hidden",
-                                                }}
+                                                labelProps={{ className: "hidden" }}
                                             />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Save and Delete Buttons */}
                             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8">
                                 <Button
                                     className="bg-[#0a8ea8] hover:bg-[#0a7d94] px-8 py-2.5 rounded-lg shadow-md transition-colors flex-1"
@@ -662,13 +624,12 @@ function Rooms() {
                 </div>
             )}
 
-            {/* Save Confirmation Dialog */}
             {showSaveConfirm && (
                 <div
                     className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
                     onClick={() => setShowSaveConfirm(false)}
                 >
-                    <Card className="w-full max-w-sm bg-white shadow-2xl rounded-xl" onClick={(e) => e.stopPropagation()}>
+                    <Card className="w fullscreen max-w-sm bg-white shadow-2xl rounded-xl" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6">
                             <Typography variant="h5" className="font-bold text-gray-800 mb-4">
                                 Confirm Changes
@@ -692,7 +653,6 @@ function Rooms() {
                 </div>
             )}
 
-            {/* Delete Confirmation Dialog */}
             {showDeleteConfirm && (
                 <div
                     className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"

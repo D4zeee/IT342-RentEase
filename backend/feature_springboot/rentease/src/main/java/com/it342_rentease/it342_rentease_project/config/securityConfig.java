@@ -5,7 +5,7 @@ import com.it342_rentease.it342_rentease_project.service.OwnerDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // ✅ Added for mobile
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -16,10 +16,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List; // ✅ Added for mobile
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -34,27 +35,19 @@ public class securityConfig {
                 .cors().configurationSource(corsConfigurationSource()).and()
                 .csrf().disable()
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        // ✅ OWNER endpoints
                         .requestMatchers("/owners/register").permitAll()
                         .requestMatchers("/owners/login").permitAll()
                         .requestMatchers("/owners").permitAll()
                         .requestMatchers("/owners/current-user").authenticated()
-
-                        // ✅ RENTER endpoints (added properly)
                         .requestMatchers(HttpMethod.POST, "/api/renters").permitAll()
                         .requestMatchers("/api/renters/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/renters/current-user").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/renters/update-name").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/renters/delete").authenticated()
-
-                        // ✅ PUBLIC endpoints
                         .requestMatchers("/rooms/**").permitAll()
                         .requestMatchers("/rented_units/**").permitAll()
                         .requestMatchers("/payments/**").permitAll()
-                        .requestMatchers("/payment_reminders/**").permitAll() // ✅ Changed from authenticated to
-                                                                              // permitAll
-
-                        // ✅ Catch-all
+                        .requestMatchers("/payment_reminders/**").permitAll()
                         .anyRequest().authenticated())
                 .formLogin().disable()
                 .logout(logout -> logout
@@ -72,7 +65,7 @@ public class securityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOriginPatterns(List.of("*")); // ✅ Allow all origins (mobile + web)
+        corsConfiguration.setAllowedOriginPatterns(List.of("*"));
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.setAllowCredentials(true);
@@ -100,5 +93,10 @@ public class securityConfig {
         provider.setUserDetailsService(ownerDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

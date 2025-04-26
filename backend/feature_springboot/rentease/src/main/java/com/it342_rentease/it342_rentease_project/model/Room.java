@@ -1,7 +1,6 @@
 package com.it342_rentease.it342_rentease_project.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -49,9 +48,8 @@ public class Room {
     private String postalCode;
 
     @Column(name = "status")
-    private String status = "available"; // default value
+    private String status = "available";
 
-    // New field to store image paths
     @ElementCollection
     @CollectionTable(name = "room_images", joinColumns = @JoinColumn(name = "room_id"))
     @Column(name = "image_path")
@@ -60,7 +58,7 @@ public class Room {
     public String getStatus() {
         return status;
     }
-    
+
     public void setStatus(String status) {
         this.status = status;
     }
