@@ -15,6 +15,12 @@ public class PaymentReminderService {
     private PaymentReminderRepository paymentReminderRepository;
 
     public PaymentReminder create(PaymentReminder reminder) {
+        // ✅ Add error handling here
+        String note = reminder.getNote();
+        if (note != null && (note.contains("Payment is due") || note.contains("Booking pending approval"))) {
+            throw new IllegalArgumentException("Note cannot contain reserved system phrases like 'Payment is due' or 'Booking pending approval'.");
+        }
+
         return paymentReminderRepository.save(reminder);
     }
 

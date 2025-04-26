@@ -22,6 +22,12 @@ public class PaymentReminder {
     @JoinColumn(name = "owner_id", nullable = false)
     private Owner owner;
 
+    @Column(name = "approval_status")
+private String approvalStatus = "pending"; // default pending
+
+
+
+
     private LocalDate dueDate;
     private Double rentalFee;
     private String note;
@@ -83,5 +89,12 @@ public class PaymentReminder {
         this.note = note;
     }
 
-   
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
+    }
+    
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
 }

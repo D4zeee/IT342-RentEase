@@ -94,7 +94,7 @@ function Sidebar() {
   }
 >
   <BellRing className="w-5 h-5" />
-  <span className="font-medium">Notifications</span>
+  <span className="font-medium">Application</span>
 </NavLink>
 
       </nav>

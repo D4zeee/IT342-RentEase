@@ -12,6 +12,7 @@ import PayMongoTest from './Components/PayMongoTest';
 import PaymentSuccess from './Components/PaymentSuccess';
 import RoomBookingMobile from './Components/RoomBookingMobile';
 import Notification from './Components/Notification'; 
+import SuccessPage from './Components/SuccessPage';
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/test-payment" element={<PayMongoTest />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/rent-room" element={<RoomBookingMobile />} />
+        <Route path="/success" element={<SuccessPage />} />
         
 
 

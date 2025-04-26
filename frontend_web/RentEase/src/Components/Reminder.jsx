@@ -69,12 +69,13 @@ function Reminder() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        // only include manually created reminders
-        const manualReminders = res.data.filter(
-          (reminder) => !reminder.note?.includes("Payment is due")
+        const manualReminders = res.data.filter((r) =>
+          !r.note?.includes("Booking pending approval") && 
+          !r.note?.includes("Payment is due")
         )
         setReminders(manualReminders)
       })
+      
       .catch((err) => console.error("Failed to fetch reminders", err))
   }, [ownerId])
   

@@ -27,51 +27,52 @@ public class RentedUnitService {
     private PaymentReminderRepository paymentReminderRepository;
 
     @Transactional 
-    public RentedUnit save(RentedUnit rentedUnit) {
-        Long roomId = rentedUnit.getRoom().getRoomId();
-    
-        Optional<Room> roomOptional = roomRepository.findById(roomId);
-        if (roomOptional.isEmpty()) {
-            throw new IllegalArgumentException("Room not found with ID: " + roomId);
-        }
-    
-        Room room = roomOptional.get();
-    
-        if ("rented".equalsIgnoreCase(room.getStatus())) {
-            throw new IllegalStateException("This room is already rented.");
-        }
-    
-        // Mark room as rented
-        room.setStatus("rented");
-        roomRepository.save(room);
-    
-        // Save rented unit
-        rentedUnit.setRoom(room);
-        RentedUnit savedUnit = rentedUnitRepository.save(rentedUnit);
-    
-        // 🔍 Check if reminder already exists for this renter-room pair
-        boolean reminderExists = paymentReminderRepository
-            .findByRenterRenterId(rentedUnit.getRenter().getRenterId())
-            .stream()
-            .anyMatch(r -> r.getRoom().getRoomId().equals(roomId));
-    
-        if (!reminderExists) {
-            // ✅ Create new reminder
-            PaymentReminder reminder = new PaymentReminder();
-            reminder.setRoom(room);
-            reminder.setRenter(rentedUnit.getRenter());
-            reminder.setOwner(room.getOwner());
-            reminder.setDueDate(rentedUnit.getStartDate());
-            reminder.setRentalFee(room.getRentalFee());
-            reminder.setNote("Payment is due on " + rentedUnit.getStartDate());
-           
+public RentedUnit save(RentedUnit rentedUnit) {
+    Long roomId = rentedUnit.getRoom().getRoomId();
+    Optional<Room> roomOptional = roomRepository.findById(roomId);
 
-    
-            paymentReminderRepository.save(reminder);
-        }
-    
-        return savedUnit;
+    if (roomOptional.isEmpty()) {
+        throw new IllegalArgumentException("Room not found with ID: " + roomId);
     }
+
+    Room room = roomOptional.get();
+
+    if ("rented".equalsIgnoreCase(room.getStatus())) {
+        throw new IllegalStateException("This room is already rented.");
+    }
+
+    // ✅ Mark room as rented TEMPORARILY (still needs owner approval)
+    room.setStatus("unavailable"); 
+    roomRepository.save(room);
+
+    // Save rented unit
+    rentedUnit.setRoom(room);
+    RentedUnit savedUnit = rentedUnitRepository.save(rentedUnit);
+
+    // 🔍 Check if reminder already exists
+    boolean pendingReminderExists = paymentReminderRepository
+    .findByRenterRenterId(rentedUnit.getRenter().getRenterId())
+    .stream()
+    .anyMatch(r -> r.getRoom().getRoomId().equals(roomId) && "pending".equalsIgnoreCase(r.getApprovalStatus()));
+
+if (!pendingReminderExists) {
+    // ✅ No pending reminder — OK to create a new reminder
+    PaymentReminder reminder = new PaymentReminder();
+    reminder.setRoom(room);
+    reminder.setRenter(rentedUnit.getRenter());
+    reminder.setOwner(room.getOwner());
+    reminder.setDueDate(rentedUnit.getStartDate());
+    reminder.setRentalFee(room.getRentalFee());
+    reminder.setNote("Booking pending approval for " + rentedUnit.getStartDate());
+    reminder.setApprovalStatus("pending");
+
+    paymentReminderRepository.save(reminder);
+}
+
+
+    return savedUnit;
+}
+
     
     
 

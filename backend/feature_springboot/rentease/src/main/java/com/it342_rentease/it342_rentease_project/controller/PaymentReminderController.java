@@ -91,6 +91,45 @@ public ResponseEntity<List<PaymentReminder>> getByOwnerId(@PathVariable Long own
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @PatchMapping("/{reminderId}/approve")
+public ResponseEntity<?> approveReminder(@PathVariable Long reminderId) {
+    Optional<PaymentReminder> reminderOpt = paymentReminderRepository.findById(reminderId);
+
+    if (reminderOpt.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
+
+    PaymentReminder reminder = reminderOpt.get();
+    Room room = reminder.getRoom();
+
+    reminder.setApprovalStatus("approved");
+    room.setStatus("rented"); // ✅ now final rented
+    roomRepository.save(room);
+    paymentReminderRepository.save(reminder);
+
+    return ResponseEntity.ok("Booking approved successfully.");
+}
+
+@PatchMapping("/{reminderId}/deny")
+public ResponseEntity<?> denyReminder(@PathVariable Long reminderId) {
+    Optional<PaymentReminder> reminderOpt = paymentReminderRepository.findById(reminderId);
+
+    if (reminderOpt.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
+
+    PaymentReminder reminder = reminderOpt.get();
+    Room room = reminder.getRoom();
+
+    reminder.setApprovalStatus("denied");
+    room.setStatus("available"); // ❌ renter denied, available again
+    roomRepository.save(room);
+    paymentReminderRepository.save(reminder);
+
+    return ResponseEntity.ok("Booking denied and room is available again.");
+}
+
+
  
 
 }

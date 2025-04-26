@@ -314,10 +314,15 @@ function Rooms() {
                                 </div>
                                 <div className="p-5">
                                     <p className="text-sm font-medium text-gray-500 mb-2">
-                                        Status: <span className={room.status === "rented" ? "text-red-500" : "text-green-600"}>
-                                            {room.status === "rented" ? "Unavailable" : "Available"}
-                                        </span>
-                                    </p>
+                                    Status: 
+                            <span className={
+                                room.status === "rented" ? "text-red-500" : 
+                                room.status === "unavailable" ? "text-yellow-500" : 
+                                "text-green-600"
+                            }>
+                                {room.status === "rented" ? "Unavailable" : room.status === "unavailable" ? "Pending Approval" : "Available"}
+                            </span>
+                            </p>
 
                                     <div className="flex justify-between items-center mb-3">
                                         <Typography variant="h5" className="font-bold text-gray-800 truncate">
