@@ -46,8 +46,7 @@ public class JwtUtils {
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(SignatureAlgorithm.HS256, jwtSecret)
+                .signWith(SignatureAlgorithm.HS512, jwtSecret) // ✅ Correct: HS512
                 .compact();
     }
-    
 }
