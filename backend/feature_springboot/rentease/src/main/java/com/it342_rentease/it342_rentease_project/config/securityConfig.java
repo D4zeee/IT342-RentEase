@@ -42,6 +42,7 @@ public class securityConfig {
                     .requestMatchers("/payment_reminders/**").permitAll()
                     .requestMatchers("/owners").permitAll()
                     .requestMatchers("/owners/current-user").authenticated()  // Explicitly protect this endpoint
+                    .requestMatchers("/owners/current").authenticated()  // Explicitly protect this endpoint
                     .anyRequest().authenticated()
             )
             .formLogin().disable()

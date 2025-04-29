@@ -28,6 +28,8 @@ private String approvalStatus = "pending"; // default pending
 
 
 
+
+
     private LocalDate dueDate;
     private Double rentalFee;
     private String note;

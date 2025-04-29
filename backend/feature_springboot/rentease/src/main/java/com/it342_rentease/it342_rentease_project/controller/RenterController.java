@@ -77,5 +77,27 @@ public ResponseEntity<?> getAllRenters() {
     return ResponseEntity.ok(renterRepository.findAll());
 }
 
+@GetMapping("/current")
+public ResponseEntity<?> getCurrentRenter(@RequestHeader("Authorization") String authHeader) {
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
+    }
+
+    String token = authHeader.substring(7);
+    String email = jwtUtil.extractUsername(token);
+
+    Optional<Renter> renterOptional = renterRepository.findByEmail(email);
+    if (renterOptional.isPresent()) {
+        Renter renter = renterOptional.get();
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", renter.getEmail());
+        response.put("renterId", renter.getRenterId());
+        response.put("name", renter.getName());
+        return ResponseEntity.ok(response);
+    } else {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Renter not found");
+    }
+}
+
 
 }

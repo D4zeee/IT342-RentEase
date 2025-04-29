@@ -95,9 +95,25 @@ if (!pendingReminderExists) {
         return rentedUnitRepository.findByRoomRoomId(roomId);
     }
 
+    @Transactional
     public void delete(Long id) {
-        rentedUnitRepository.deleteById(id);
+        Optional<RentedUnit> rentedUnitOptional = rentedUnitRepository.findById(id);
+    
+        if (rentedUnitOptional.isPresent()) {
+            RentedUnit rentedUnit = rentedUnitOptional.get();
+            Room room = rentedUnit.getRoom();
+    
+            // 🛠 Step 1: Delete rented unit
+            rentedUnitRepository.deleteById(id);
+    
+            // 🛠 Step 2: Set room status back to "available"
+            room.setStatus("available");
+            roomRepository.save(room);
+        } else {
+            throw new IllegalArgumentException("Rented unit not found with ID: " + id);
+        }
     }
-
+    
+    
 
 }

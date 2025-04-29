@@ -13,6 +13,8 @@ import PaymentSuccess from './Components/PaymentSuccess';
 import RoomBookingMobile from './Components/RoomBookingMobile';
 import Notification from './Components/Notification'; 
 import SuccessPage from './Components/SuccessPage';
+import RenterLogin from './Components/RenterLogin';
+import RenterDashboard from './Components/RenterDashboard';
 
 
 function App() {
@@ -27,6 +29,8 @@ function App() {
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/rent-room" element={<RoomBookingMobile />} />
         <Route path="/success" element={<SuccessPage />} />
+        <Route path="/renter-login" element={<RenterLogin />} />
+        <Route path="/renter-dashboard" element={<RenterDashboard />} />
         
 
 

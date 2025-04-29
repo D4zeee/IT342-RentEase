@@ -321,6 +321,7 @@ function Rooms() {
                                 "text-green-600"
                             }>
                                 {room.status === "rented" ? "Unavailable" : room.status === "unavailable" ? "Pending Approval" : "Available"}
+                               
                             </span>
                             </p>
 
