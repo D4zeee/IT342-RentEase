@@ -59,6 +59,9 @@ public class RoomService {
             Optional<Owner> owner = ownerRepository.findById(room.getOwner().getOwnerId());
             if (owner.isPresent()) {
                 room.setOwner(owner.get());
+                // Populate transient fields
+                room.setOwnerId(owner.get().getOwnerId());
+                room.setOwnerName(owner.get().getUsername());
             } else {
                 throw new IllegalArgumentException("Owner with ID " + room.getOwner().getOwnerId() + " not found");
             }
@@ -114,12 +117,31 @@ public class RoomService {
         return savedRoom;
     }
 
+    @Transactional
     public List<Room> getAllRooms() {
-        return roomRepository.findAll();
+        List<Room> rooms = roomRepository.findAll();
+        // Populate ownerId and ownerName for each room
+        for (Room room : rooms) {
+            if (room.getOwner() != null) {
+                room.setOwnerId(room.getOwner().getOwnerId());
+                room.setOwnerName(room.getOwner().getUsername());
+            }
+        }
+        return rooms;
     }
 
+    @Transactional
     public Optional<Room> getRoomById(Long roomId) {
-        return roomRepository.findById(roomId);
+        Optional<Room> roomOptional = roomRepository.findById(roomId);
+        // Populate ownerId and ownerName if room exists
+        if (roomOptional.isPresent()) {
+            Room room = roomOptional.get();
+            if (room.getOwner() != null) {
+                room.setOwnerId(room.getOwner().getOwnerId());
+                room.setOwnerName(room.getOwner().getUsername());
+            }
+        }
+        return roomOptional;
     }
 
     @Transactional
@@ -132,6 +154,8 @@ public class RoomService {
                 Optional<Owner> owner = ownerRepository.findById(room.getOwner().getOwnerId());
                 if (owner.isPresent()) {
                     updatedRoom.setOwner(owner.get());
+                    updatedRoom.setOwnerId(owner.get().getOwnerId());
+                    updatedRoom.setOwnerName(owner.get().getUsername());
                 } else {
                     throw new IllegalArgumentException("Owner with ID " + room.getOwner().getOwnerId() + " not found");
                 }
@@ -275,11 +299,29 @@ public class RoomService {
         }
     }
 
+    @Transactional
     public List<Room> getRoomsByOwnerId(Long ownerId) {
-        return roomRepository.findByOwnerOwnerId(ownerId);
+        List<Room> rooms = roomRepository.findByOwnerOwnerId(ownerId);
+        // Populate ownerId and ownerName for each room
+        for (Room room : rooms) {
+            if (room.getOwner() != null) {
+                room.setOwnerId(room.getOwner().getOwnerId());
+                room.setOwnerName(room.getOwner().getUsername());
+            }
+        }
+        return rooms;
     }
 
+    @Transactional
     public List<Room> getUnavailableRoomsByOwnerId(Long ownerId) {
-        return roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
+        List<Room> rooms = roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
+        // Populate ownerId and ownerName for each room
+        for (Room room : rooms) {
+            if (room.getOwner() != null) {
+                room.setOwnerId(room.getOwner().getOwnerId());
+                room.setOwnerName(room.getOwner().getUsername());
+            }
+        }
+        return rooms;
     }
 }

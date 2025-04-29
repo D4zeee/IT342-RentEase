@@ -51,12 +51,36 @@ public class Room {
     @Column(name = "status")
     private String status = "available"; // default value
 
-    // New field to store image paths
     @ElementCollection
     @CollectionTable(name = "room_images", joinColumns = @JoinColumn(name = "room_id"))
     @Column(name = "image_path")
     private List<String> imagePaths = new ArrayList<>();
 
+    // Add transient fields for ownerId and ownerName
+    @Transient
+    private Long ownerId;
+
+    @Transient
+    private String ownerName;
+
+    // Getters and setters for transient fields
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    // Existing getters and setters
     public String getStatus() {
         return status;
     }

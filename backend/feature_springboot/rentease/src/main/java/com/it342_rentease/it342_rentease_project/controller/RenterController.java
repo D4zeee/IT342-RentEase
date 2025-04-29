@@ -40,37 +40,36 @@ public class RenterController {
 
         return renterRepository.save(renter);
     }
-@PostMapping("/login")
-public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
-    try {
-        String email = loginData.get("email");
-        String password = loginData.get("password");
-
-        Optional<Renter> renterOptional = renterRepository.findByEmail(email);
-        if (renterOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
-        }
-
-        Renter renter = renterOptional.get();
-        if (!passwordEncoder.matches(password, renter.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
-        }
-
-        String token = jwtUtil.generateTokenForRenter(renter.getEmail());
-
-
-        Map<String, String> response = new HashMap<>();
-        response.put("jwt", token);
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
+        try {
+            String email = loginData.get("email");
+            String password = loginData.get("password");
     
-
-        return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-        e.printStackTrace(); // For terminal logs
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                             .body(Map.of("error", e.getMessage()));
+            Optional<Renter> renterOptional = renterRepository.findByEmail(email);
+            if (renterOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            }
+    
+            Renter renter = renterOptional.get();
+            if (!passwordEncoder.matches(password, renter.getPassword())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            }
+    
+            // Generate JWT with renterId and renterName
+            String token = jwtUtil.generateTokenForRenter(renter.getEmail(), renter.getRenterId(), renter.getName());
+    
+            Map<String, String> response = new HashMap<>();
+            response.put("jwt", token);
+    
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(Map.of("error", e.getMessage()));
+        }
     }
-}
 
 @GetMapping
 public ResponseEntity<?> getAllRenters() {
@@ -85,7 +84,10 @@ public ResponseEntity<?> getCurrentRenter(@RequestHeader("Authorization") String
 
     String token = authHeader.substring(7);
     String email = jwtUtil.extractUsername(token);
+    Long renterId = jwtUtil.extractRenterId(token);
+    String renterName = jwtUtil.extractRenterName(token);
 
+    // Optional: Still query the database to ensure data is fresh
     Optional<Renter> renterOptional = renterRepository.findByEmail(email);
     if (renterOptional.isPresent()) {
         Renter renter = renterOptional.get();

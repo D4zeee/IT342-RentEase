@@ -1,37 +1,60 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
 function RenterDashboard() {
     const location = useLocation();
     const navigate = useNavigate();
     const [rooms, setRooms] = useState([]);
+    const [renterId, setRenterId] = useState(null);
+    const [renterName, setRenterName] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRoomsLoading, setIsRoomsLoading] = useState(true);
 
     useEffect(() => {
         const token = Cookies.get("renterToken");
+        console.log("Token from cookie:", token);
 
         if (!token) {
+            console.log("No token found, redirecting to login");
             navigate("/renter-login");
             return;
         }
 
+        try {
+            const decodedToken = jwtDecode(token);
+            console.log("Decoded token:", decodedToken);
+            setRenterId(decodedToken.renterId);
+            setRenterName(decodedToken.renterName);
+            console.log("Set renterId:", decodedToken.renterId);
+        } catch (error) {
+            console.error("Error decoding token:", error);
+            navigate("/renter-login");
+            return;
+        } finally {
+            setIsLoading(false);
+        }
+
         if (location.state && location.state.rooms) {
             setRooms(location.state.rooms);
+            setIsRoomsLoading(false);
         } else {
+            setIsRoomsLoading(true);
             axios
                 .get("http://localhost:8080/rooms", {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 .then((response) => {
+                    console.log("Rooms data:", response.data); // Debug: Check the rooms data
                     setRooms(response.data);
                 })
                 .catch((error) => {
                     console.error("Error fetching rooms:", error.response?.data || error.message);
                     navigate("/renter-login");
-                });
+                })
+                .finally(() => setIsRoomsLoading(false));
         }
     }, [location, navigate]);
 
@@ -45,19 +68,6 @@ function RenterDashboard() {
 
         if (!token) {
             alert("You must be logged in to rent a room.");
-            return;
-        }
-
-        let renterId;
-        try {
-            const response = await axios.get("http://localhost:8080/api/renters/current", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            renterId = response.data.renterId;
-        } catch (error) {
-            console.error("Error fetching renter ID:", error.response?.data || error.message);
-            alert("Failed to rent room: Unable to verify renter");
-            navigate("/renter-login");
             return;
         }
 
@@ -86,6 +96,7 @@ function RenterDashboard() {
                 });
             })
             .then((response) => {
+                console.log("Updated rooms data:", response.data); // Debug: Check updated rooms
                 setRooms(response.data);
             })
             .catch((error) => {
@@ -99,7 +110,9 @@ function RenterDashboard() {
         <div className="min-h-screen bg-gray-100 p-8">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-800">Available Rooms</h1>
-                <h2 className="text-lg text-gray-600">Renter ID: {Cookies.get("renterId")}</h2>
+                <h2 className="text-lg text-gray-600">
+                    {isLoading ? "Loading..." : `Renter ID: ${renterId || "Not Available"}`}
+                </h2>
                 <button
                     onClick={handleLogout}
                     className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
@@ -108,7 +121,9 @@ function RenterDashboard() {
                 </button>
             </div>
 
-            {rooms.length === 0 ? (
+            {isRoomsLoading ? (
+                <p className="text-center text-gray-500">Loading rooms...</p>
+            ) : rooms.length === 0 ? (
                 <p className="text-center text-gray-500">No rooms available at the moment.</p>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -126,6 +141,12 @@ function RenterDashboard() {
                             </p>
                             <p className="text-gray-600 mb-1">
                                 <strong>Status:</strong> {room.status}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                <strong>Owner ID:</strong> {room.ownerId || "Unknown"}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                <strong>Owner Name:</strong> {room.ownerName || "Unknown"}
                             </p>
                             <p className="text-gray-500 text-sm mt-2">{room.description}</p>
 

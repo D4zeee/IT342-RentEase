@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode"; // Correct: Named import
 
 function RenterLogin() {
     const [email, setEmail] = useState("");
@@ -14,23 +15,17 @@ function RenterLogin() {
             const response = await axios.post("http://localhost:8080/api/renters/login", { email, password });
             const { jwt } = response.data;
             Cookies.set("renterToken", jwt, { expires: 1 });
-    
-            // ✅ Immediately fetch the renter info
-            const renterInfoResponse = await axios.get("http://localhost:8080/api/renters/current", {
-                headers: { Authorization: `Bearer ${jwt}` },
-            });
-            const { renterId, name } = renterInfoResponse.data;
-            console.log("Logged in renterId:", renterId); // 🔥 You can see in console
-            Cookies.set("renterId", renterId, { expires: 1 });
-            Cookies.set("renterName", name, { expires: 1 });
-    
+
+            // Decode the JWT to verify contents (optional, for logging)
+            const decodedToken = jwtDecode(jwt);
+            console.log("Decoded JWT:", decodedToken);
+
             navigate("/renter-dashboard");
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
             alert("Login failed: " + (error.response?.data || error.message));
         }
     };
-    
 
     return (
         <form onSubmit={handleSubmit}>
