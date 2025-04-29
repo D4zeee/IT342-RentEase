@@ -1,5 +1,7 @@
 package com.it342_rentease.it342_rentease_project.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.it342_rentease.it342_rentease_project.model.Owner;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.OwnerRepository;
@@ -125,7 +127,7 @@ public class RoomService {
     }
 
     @Transactional
-    public Room updateRoom(Long roomId, Room room, List<MultipartFile> images) throws IOException {
+    public Room updateRoom(Long roomId, Room room, List<MultipartFile> images, String removedImagesJson) throws IOException {
         System.out.println("Updating room with ID: " + roomId);
         Optional<Room> existingRoom = roomRepository.findById(roomId);
         if (existingRoom.isPresent()) {
@@ -148,6 +150,50 @@ public class RoomService {
             updatedRoom.setPostalCode(room.getPostalCode());
 
             List<String> imagePaths = updatedRoom.getImagePaths();
+
+            // Process removed images
+            if (removedImagesJson != null && !removedImagesJson.isEmpty()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                List<String> removedImages;
+                try {
+                    removedImages = objectMapper.readValue(removedImagesJson, new TypeReference<List<String>>(){});
+                } catch (Exception e) {
+                    throw new IOException("Failed to parse removedImages JSON", e);
+                }
+
+                for (String imagePath : removedImages) {
+                    if (imagePath != null && !imagePath.isEmpty()) {
+                        // Remove the image from the imagePaths list
+                        imagePaths.remove(imagePath);
+
+                        // Delete the image from Supabase
+                        String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+                        System.out.println("Deleting image from Supabase: " + fileName);
+                        try {
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.setBearerAuth(supabaseKey);
+                            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+                            String deleteUrl = String.format("%s/%s/%s", storageUrl, bucketName, fileName);
+                            ResponseEntity<String> response = restTemplate.exchange(
+                                    deleteUrl,
+                                    HttpMethod.DELETE,
+                                    requestEntity,
+                                    String.class
+                            );
+
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                System.out.println("Image deleted successfully: " + fileName);
+                            } else {
+                                System.err.println("Failed to delete image from Supabase: " + response.getStatusCode());
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Failed to delete image from Supabase: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+
+            // Process new images
             if (images != null && !images.isEmpty()) {
                 System.out.println("Processing " + images.size() + " images for update");
                 for (MultipartFile image : images) {
@@ -188,10 +234,11 @@ public class RoomService {
                         System.out.println("Skipping empty image file");
                     }
                 }
-                updatedRoom.setImagePaths(imagePaths);
             } else {
                 System.out.println("No new images provided for update");
             }
+
+            updatedRoom.setImagePaths(imagePaths);
             System.out.println("Image paths to save: " + imagePaths);
 
             Room savedRoom = roomRepository.save(updatedRoom);
@@ -250,6 +297,7 @@ public class RoomService {
     public List<Room> getRoomsByOwnerId(Long ownerId) {
         return roomRepository.findByOwnerOwnerId(ownerId);
     }
+
     public List<Room> getUnavailableRoomsByOwnerId(Long ownerId) {
         return roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
     }

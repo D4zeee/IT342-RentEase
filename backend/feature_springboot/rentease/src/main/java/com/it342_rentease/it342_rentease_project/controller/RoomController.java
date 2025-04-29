@@ -49,10 +49,11 @@ public class RoomController {
     public ResponseEntity<Room> updateRoom(
             @PathVariable Long id,
             @RequestPart("room") Room room,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestPart(value = "removedImages", required = false) String removedImagesJson
     ) {
         try {
-            Room updatedRoom = roomService.updateRoom(id, room, images);
+            Room updatedRoom = roomService.updateRoom(id, room, images, removedImagesJson);
             if (updatedRoom != null) {
                 return new ResponseEntity<>(updatedRoom, HttpStatus.OK);
             }
@@ -77,8 +78,7 @@ public class RoomController {
 
     @GetMapping("/owner/{ownerId}/unavailable")
     public ResponseEntity<List<Room>> getUnavailableRoomsByOwnerId(@PathVariable Long ownerId) {
-    List<Room> unavailableRooms = roomService.getUnavailableRoomsByOwnerId(ownerId);
-    return new ResponseEntity<>(unavailableRooms, HttpStatus.OK);
+        List<Room> unavailableRooms = roomService.getUnavailableRoomsByOwnerId(ownerId);
+        return new ResponseEntity<>(unavailableRooms, HttpStatus.OK);
     }
-
 }

@@ -27,6 +27,8 @@ function Rooms() {
     const [showSaveConfirm, setShowSaveConfirm] = useState(false)
     const [images, setImages] = useState([]) // Store the File objects
     const [imagePreviews, setImagePreviews] = useState([]) // Store the preview URLs
+    // New state to track removed images
+    const [removedImages, setRemovedImages] = useState([])
 
     // Fetch current owner
     useEffect(() => {
@@ -87,10 +89,17 @@ function Rooms() {
 
     // Handle image removal
     const handleRemoveImage = (index) => {
+        const previewToRemove = imagePreviews[index]
         const newImages = images.filter((_, i) => i !== index)
         const newPreviews = imagePreviews.filter((_, i) => i !== index)
+
         setImages(newImages)
         setImagePreviews(newPreviews)
+
+        // If the removed image is an existing one (starts with the Supabase URL), add it to removedImages
+        if (previewToRemove && !previewToRemove.startsWith("blob:")) {
+            setRemovedImages([...removedImages, previewToRemove])
+        }
     }
 
     const handleAddRoom = () => {
@@ -118,6 +127,7 @@ function Rooms() {
             setImagePreviews([])
         }
         setImages([]) // Reset new images to upload
+        setRemovedImages([]) // Reset removed images
     }
 
     const handleCloseModal = (e) => {
@@ -159,6 +169,8 @@ function Rooms() {
         images.forEach((image, index) => {
             formData.append("images", image)
         })
+        // Append removedImages to the form data
+        formData.append("removedImages", JSON.stringify(removedImages))
 
         if (roomToEdit) {
             setShowSaveConfirm(true)
@@ -201,6 +213,8 @@ function Rooms() {
         images.forEach((image, index) => {
             formData.append("images", image)
         })
+        // Append removedImages to the form data
+        formData.append("removedImages", JSON.stringify(removedImages))
 
         axios
             .put(`http://localhost:8080/rooms/${roomToEdit.roomId}`, formData, {
@@ -258,6 +272,7 @@ function Rooms() {
         setPostalCode("")
         setImages([])
         setImagePreviews([])
+        setRemovedImages([]) // Clear removed images
         setError("")
     }
 
