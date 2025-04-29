@@ -1,18 +1,23 @@
 package com.it342_rentease.it342_rentease_project.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.it342_rentease.it342_rentease_project.model.Owner;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.OwnerRepository;
 import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,15 +32,24 @@ public class RoomService {
     @Autowired
     private OwnerRepository ownerRepository;
 
-    private final Path uploadDir = Paths.get("uploads");
+    @Autowired
+    private RestTemplate restTemplate;
 
-    public RoomService() {
-        try {
-            Files.createDirectories(uploadDir);
-            System.out.println("Upload directory created at: " + uploadDir.toAbsolutePath());
-        } catch (IOException e) {
-            throw new RuntimeException("Could not create upload directory", e);
-        }
+    private final String supabaseUrl;
+    private final String supabaseKey;
+    private final String bucketName;
+    private final String storageUrl;
+
+    public RoomService(
+            @Value("${supabase.url}") String supabaseUrl,
+            @Value("${supabase.key}") String supabaseKey,
+            @Value("${supabase.bucket}") String bucketName,
+            @Value("${supabase.storage-url}") String storageUrl
+    ) {
+        this.supabaseUrl = supabaseUrl;
+        this.supabaseKey = supabaseKey;
+        this.bucketName = bucketName;
+        this.storageUrl = storageUrl;
     }
 
     @Transactional
@@ -58,16 +72,33 @@ public class RoomService {
             for (MultipartFile image : images) {
                 if (!image.isEmpty()) {
                     String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-                    Path filePath = uploadDir.resolve(fileName);
-                    System.out.println("Saving image to: " + filePath);
+                    System.out.println("Uploading image to Supabase: " + fileName);
                     try {
-                        Files.write(filePath, image.getBytes());
-                        System.out.println("Image saved successfully to: " + filePath);
-                    } catch (IOException e) {
-                        System.err.println("Failed to save image to " + filePath + ": " + e.getMessage());
-                        throw e;
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setBearerAuth(supabaseKey);
+                        headers.set("Content-Type", image.getContentType());
+
+                        HttpEntity<byte[]> requestEntity = new HttpEntity<>(image.getBytes(), headers);
+
+                        String uploadUrl = String.format("%s/%s/%s", storageUrl, bucketName, fileName);
+                        ResponseEntity<String> response = restTemplate.exchange(
+                                uploadUrl,
+                                HttpMethod.POST,
+                                requestEntity,
+                                String.class
+                        );
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            String publicUrl = String.format("%s/public/%s/%s", storageUrl, bucketName, fileName);
+                            imagePaths.add(publicUrl);
+                            System.out.println("Image uploaded successfully: " + publicUrl);
+                        } else {
+                            throw new IOException("Failed to upload image to Supabase: " + response.getStatusCode());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Failed to upload image to Supabase: " + e.getMessage());
+                        throw new IOException("Failed to upload image to Supabase", e);
                     }
-                    imagePaths.add(filePath.toString());
                 } else {
                     System.out.println("Skipping empty image file");
                 }
@@ -92,7 +123,7 @@ public class RoomService {
     }
 
     @Transactional
-    public Room updateRoom(Long roomId, Room room, List<MultipartFile> images) throws IOException {
+    public Room updateRoom(Long roomId, Room room, List<MultipartFile> images, String removedImagesJson) throws IOException {
         System.out.println("Updating room with ID: " + roomId);
         Optional<Room> existingRoom = roomRepository.findById(roomId);
         if (existingRoom.isPresent()) {
@@ -115,29 +146,86 @@ public class RoomService {
             updatedRoom.setPostalCode(room.getPostalCode());
 
             List<String> imagePaths = updatedRoom.getImagePaths();
+
+            if (removedImagesJson != null && !removedImagesJson.isEmpty()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                List<String> removedImages;
+                try {
+                    removedImages = objectMapper.readValue(removedImagesJson, new TypeReference<List<String>>(){});
+                } catch (Exception e) {
+                    throw new IOException("Failed to parse removedImages JSON", e);
+                }
+
+                for (String imagePath : removedImages) {
+                    if (imagePath != null && !imagePath.isEmpty()) {
+                        imagePaths.remove(imagePath);
+                        String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+                        System.out.println("Deleting image from Supabase: " + fileName);
+                        try {
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.setBearerAuth(supabaseKey);
+                            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+                            String deleteUrl = String.format("%s/%s/%s", storageUrl, bucketName, fileName);
+                            ResponseEntity<String> response = restTemplate.exchange(
+                                    deleteUrl,
+                                    HttpMethod.DELETE,
+                                    requestEntity,
+                                    String.class
+                            );
+
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                System.out.println("Image deleted successfully: " + fileName);
+                            } else {
+                                System.err.println("Failed to delete image from Supabase: " + response.getStatusCode());
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Failed to delete image from Supabase: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+
             if (images != null && !images.isEmpty()) {
                 System.out.println("Processing " + images.size() + " images for update");
                 for (MultipartFile image : images) {
                     if (!image.isEmpty()) {
                         String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-                        Path filePath = uploadDir.resolve(fileName);
-                        System.out.println("Saving image to: " + filePath);
+                        System.out.println("Uploading image to Supabase: " + fileName);
                         try {
-                            Files.write(filePath, image.getBytes());
-                            System.out.println("Image saved successfully to: " + filePath);
-                        } catch (IOException e) {
-                            System.err.println("Failed to save image to " + filePath + ": " + e.getMessage());
-                            throw e;
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.setBearerAuth(supabaseKey);
+                            headers.set("Content-Type", image.getContentType());
+
+                            HttpEntity<byte[]> requestEntity = new HttpEntity<>(image.getBytes(), headers);
+
+                            String uploadUrl = String.format("%s/%s/%s", storageUrl, bucketName, fileName);
+                            ResponseEntity<String> response = restTemplate.exchange(
+                                    uploadUrl,
+                                    HttpMethod.POST,
+                                    requestEntity,
+                                    String.class
+                            );
+
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                String publicUrl = String.format("%s/public/%s/%s", storageUrl, bucketName, fileName);
+                                imagePaths.add(publicUrl);
+                                System.out.println("Image uploaded successfully: " + publicUrl);
+                            } else {
+                                throw new IOException("Failed to upload image to Supabase: " + response.getStatusCode());
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Failed to upload image to Supabase: " + e.getMessage());
+                            throw new IOException("Failed to upload image to Supabase", e);
                         }
-                        imagePaths.add(filePath.toString());
                     } else {
                         System.out.println("Skipping empty image file");
                     }
                 }
-                updatedRoom.setImagePaths(imagePaths);
             } else {
                 System.out.println("No new images provided for update");
             }
+
+            updatedRoom.setImagePaths(imagePaths);
             System.out.println("Image paths to save: " + imagePaths);
 
             Room savedRoom = roomRepository.save(updatedRoom);
@@ -154,7 +242,28 @@ public class RoomService {
             if (room.isPresent()) {
                 List<String> imagePaths = room.get().getImagePaths();
                 for (String imagePath : imagePaths) {
-                    Files.deleteIfExists(Paths.get(imagePath));
+                    String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+                    System.out.println("Deleting image from Supabase: " + fileName);
+                    try {
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setBearerAuth(supabaseKey);
+                        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+                        String deleteUrl = String.format("%s/%s/%s", storageUrl, bucketName, fileName);
+                        ResponseEntity<String> response = restTemplate.exchange(
+                                deleteUrl,
+                                HttpMethod.DELETE,
+                                requestEntity,
+                                String.class
+                        );
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            System.out.println("Image deleted successfully: " + fileName);
+                        } else {
+                            System.err.println("Failed to delete image from Supabase: " + response.getStatusCode());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Failed to delete image from Supabase: " + e.getMessage());
+                    }
                 }
                 roomRepository.deleteById(roomId);
                 return true;
@@ -168,5 +277,9 @@ public class RoomService {
 
     public List<Room> getRoomsByOwnerId(Long ownerId) {
         return roomRepository.findByOwnerOwnerId(ownerId);
+    }
+
+    public List<Room> getUnavailableRoomsByOwnerId(Long ownerId) {
+        return roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
     }
 }

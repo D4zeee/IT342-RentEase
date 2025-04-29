@@ -13,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -92,5 +93,10 @@ public DaoAuthenticationProvider daoAuthenticationProvider(OwnerDetailsService o
     provider.setPasswordEncoder(passwordEncoder());  // use your existing password encoder
     return provider;
 }
+
+@Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 
 }
