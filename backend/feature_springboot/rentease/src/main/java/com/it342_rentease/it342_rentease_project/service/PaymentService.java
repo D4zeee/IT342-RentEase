@@ -36,20 +36,23 @@ public class PaymentService {
             PAYMONGO_INTENT_URL == null || PAYMONGO_INTENT_URL.isEmpty()) {
             throw new IllegalArgumentException("PayMongo ENV values are not set.");
         }
-
-        RestTemplate restTemplate = new RestTemplate();
+    
+        RestTemplate restTemplate = new RestTemplate(); 
         HttpHeaders headers = createPayMongoHeaders();
-
+    
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put("amount", Integer.parseInt(amount));
+        attributes.put("amount", Integer.parseInt(amount) * 100); // PHP x100 centavos
         attributes.put("currency", "PHP");
-        attributes.put("payment_method_allowed", List.of("card", "paymaya", "gcash"));
+        attributes.put("payment_method_allowed", List.of("gcash"));
         attributes.put("description", "RentEase Payment");
         attributes.put("statement_descriptor", "RentEase");
-
+    
         Map<String, Object> data = Map.of("attributes", attributes);
         Map<String, Object> requestBody = Map.of("data", data);
-
+    
+        System.out.println("=== Sending PayMongo PaymentIntent ===");
+        System.out.println(requestBody);  // 👀 Print the outgoing request for debugging
+    
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             PAYMONGO_INTENT_URL,
@@ -57,9 +60,11 @@ public class PaymentService {
             entity,
             new ParameterizedTypeReference<>() {}
         );
-
+    
         return response.getBody();
     }
+    
+    
 
     public Map<String, Object> createPaymentMethod(String name, String email, String phone, String type) {
         if (PAYMONGO_SECRET_KEY == null || PAYMONGO_SECRET_KEY.isEmpty() ||

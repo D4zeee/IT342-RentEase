@@ -13,8 +13,13 @@ import PaymentSuccess from './Components/PaymentSuccess';
 import RoomBookingMobile from './Components/RoomBookingMobile';
 import Notification from './Components/Notification'; 
 import SuccessPage from './Components/SuccessPage';
-import RenterLogin from './Components/RenterLogin';
-import RenterDashboard from './Components/RenterDashboard';
+
+import RenterDashboard from './renterComponents/RenterDashboard';
+import RenterLogin from './renterComponents/RenterLogin';
+import RenterLayout from './renterComponents/RenterLayout';
+import RenterNotifications from './renterComponents/RenterNotifications';
+import PaymentMethodPage from './renterComponents/PaymentMethodPage';
+
 
 
 function App() {
@@ -31,6 +36,15 @@ function App() {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/renter-login" element={<RenterLogin />} />
         <Route path="/renter-dashboard" element={<RenterDashboard />} />
+        <Route path="/renter-login" element={<RenterLogin />} />
+        <Route path="/renter-layout" element={<RenterLayout />}/>
+        <Route path="/renter-notif" element={<RenterNotifications />} />
+        <Route path="/payment-method" element={<PaymentMethodPage />} />
+
+        
+        
+
+        
         
 
 

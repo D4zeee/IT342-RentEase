@@ -20,6 +20,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.it342_rentease.it342_rentease_project.security.JwtFilter;
 import com.it342_rentease.it342_rentease_project.service.OwnerDetailsService;
 
+import org.springframework.http.HttpMethod;
+
+
 @Configuration
 @EnableWebSecurity
 public class securityConfig {
@@ -38,7 +41,11 @@ public class securityConfig {
                 .requestMatchers("/api/renters/register", "/api/renters/login","/api/renters").permitAll() 
                 .requestMatchers("/owners/login").permitAll()               
                     .requestMatchers("/rooms/**").permitAll()
-                    .requestMatchers("/rented_units/**").permitAll()
+                    .requestMatchers("/rented_units").permitAll()
+                    .requestMatchers("/api/renters/current").hasRole("RENTER")
+                   
+
+                   
                     .requestMatchers("/payments/**").permitAll()
                     .requestMatchers("/payment_reminders/**").permitAll()
                     .requestMatchers("/owners").permitAll()
