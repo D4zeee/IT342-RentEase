@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 
 function PaymentMethodPage() {
   const location = useLocation();
-  const { paymentIntentId, clientKey } = location.state || {};
+  const navigate = useNavigate();
+  const { paymentIntentId, clientKey, roomId } = location.state || {}; // Receive roomId from state
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,7 +52,7 @@ function PaymentMethodPage() {
         {
           payment_method: paymentMethodId,
           client_key: clientKey,
-          return_url: "http://localhost:5173/payment-success"
+          return_url: `http://localhost:5173/payment-success?payment_intent_id=${paymentIntentId}&room_id=${roomId}` // Pass roomId in URL
         }
       );
 

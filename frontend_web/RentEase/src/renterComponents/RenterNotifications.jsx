@@ -38,9 +38,8 @@ function RenterNotifications() {
                         const dateCompare = new Date(b.dueDate) - new Date(a.dueDate);
                         return dateCompare !== 0 ? dateCompare : b.reminderId - a.reminderId;
                       });
-                      
         
-                const latest = approvedReminders[0]; // 🟩 Only most recent
+                const latest = approvedReminders[0];
         
                 const notificationsData = latest ? [{
                     id: latest.reminderId,
@@ -59,9 +58,6 @@ function RenterNotifications() {
             }
         };
         
-        
-        
-
         fetchNotifications();
     }, [navigate]);
 
@@ -102,18 +98,16 @@ function RenterNotifications() {
                                             const token = Cookies.get("renterToken");
                                         
                                             try {
-                                                // 1. Call backend to create payment intent based on the roomId
                                                 const response = await axios.post("http://localhost:8080/rented_units/initiate-payment", {
                                                     roomId: notification.roomId,
                                                 }, {
                                                     headers: { Authorization: `Bearer ${token}` }
                                                 });
                                         
-                                                const { paymentIntentId, clientKey } = response.data;
+                                                const { paymentIntentId, clientKey, roomId } = response.data;
                                         
-                                                // 2. Redirect renter to payment page
                                                 navigate("/payment-method", {
-                                                    state: { paymentIntentId, clientKey }
+                                                    state: { paymentIntentId, clientKey, roomId } // Pass roomId to PaymentMethodPage
                                                 });
                                         
                                             } catch (error) {
@@ -121,7 +115,6 @@ function RenterNotifications() {
                                                 alert("Payment initiation failed.");
                                             }
                                         }}
-                                        
                                     >
                                         Proceed to Pay
                                     </Button>
