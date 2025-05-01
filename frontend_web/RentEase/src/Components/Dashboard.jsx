@@ -12,7 +12,7 @@ import {
 } from "@heroicons/react/24/outline"
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({ total: 0, available: 0, rented: 0 })
+  const [stats, setStats] = useState({ total: 0, available: 0, rented: 0, revenue: 0 })
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -40,10 +40,10 @@ const Dashboard = () => {
     fetchStats()
   }, [])
 
-  // Mock data for the additional UI elements
+  // Data for UI elements
   const mockData = {
     newBookings: stats.total,
-    revenue: stats.total * 1000,
+    revenue: stats.revenue, // Use revenue from API
     occupiedRooms: stats.rented,
     availableRooms: stats.available,
   }
@@ -123,7 +123,9 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-gray-600 font-medium">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">${mockData.revenue.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-gray-800 mt-2">
+                    ₱{mockData.revenue.toLocaleString()}
+                  </p>
                 </div>
                 <div className="bg-white p-2 rounded-lg shadow-sm">
                   <CurrencyDollarIcon className="h-6 w-6 text-teal-500" />

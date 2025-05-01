@@ -1,6 +1,8 @@
 package com.it342_rentease.it342_rentease_project.controller;
 
+import com.it342_rentease.it342_rentease_project.model.Payment;
 import com.it342_rentease.it342_rentease_project.model.Room;
+import com.it342_rentease.it342_rentease_project.repository.PaymentRepository;
 import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 import com.it342_rentease.it342_rentease_project.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class RoomController {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     @PostMapping
     public ResponseEntity<Room> createRoom(
@@ -175,18 +180,26 @@ public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long 
         }
     }
 
-    // to display in the dashboard
-    @GetMapping("/owner/{ownerId}/room-stats")
-public ResponseEntity<Map<String, Long>> getRoomStatsByOwner(@PathVariable Long ownerId) {
+// Updated room-stats endpoint
+@GetMapping("/owner/{ownerId}/room-stats")
+public ResponseEntity<Map<String, Object>> getRoomStatsByOwner(@PathVariable Long ownerId) {
     try {
+        // Count total, available, and rented rooms
         long total = roomRepository.countByOwnerOwnerId(ownerId);
         long available = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "available");
         long rented = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "rented");
 
-        Map<String, Long> stats = new HashMap<>();
+        // Calculate revenue from paid payments for rooms owned by ownerId
+        List<Payment> paidPayments = paymentRepository.findByRoomOwnerOwnerIdAndStatus(ownerId, "Paid");
+        double revenue = paidPayments.stream()
+                .mapToDouble(Payment::getAmount)
+                .sum();
+
+        Map<String, Object> stats = new HashMap<>();
         stats.put("total", total);
         stats.put("available", available);
         stats.put("rented", rented);
+        stats.put("revenue", revenue);
 
         return ResponseEntity.ok(stats);
     } catch (Exception e) {
@@ -194,5 +207,4 @@ public ResponseEntity<Map<String, Long>> getRoomStatsByOwner(@PathVariable Long 
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-
 }

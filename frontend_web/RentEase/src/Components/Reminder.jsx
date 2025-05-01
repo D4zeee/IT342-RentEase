@@ -1,28 +1,42 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Typography, Button, Input, Textarea, Select, Option } from "@material-tailwind/react";
-import { BellRing, Plus, Calendar, Home, X, AlertCircle } from "lucide-react";
-import axios from "axios";
-import Cookies from "js-cookie";
+import { useState, useEffect } from "react"
+import { Typography } from "@material-tailwind/react"
+import { Button } from "@material-tailwind/react"
+import { Input } from "@material-tailwind/react"
+import { Textarea } from "@material-tailwind/react"
+import { Select, Option } from "@material-tailwind/react"
+import { BellRing, Plus, Calendar, Home, X, AlertCircle } from "lucide-react"
+import axios from "axios"
+import Cookies from "js-cookie"
+
+// Loading spinner component
+const LoadingSpinner = ({ size = "h-12 w-12" }) => (
+  <div className="flex justify-center items-center">
+    <div className={`animate-spin rounded-full ${size} border-t-2 border-b-2 border-cyan-600`}></div>
+  </div>
+)
 
 function Reminder() {
-  const [showModal, setShowModal] = useState(false);
-  const [room, setRoom] = useState("");
-  const [date, setDate] = useState("");
-  const [note, setNote] = useState("");
-  const [errors, setErrors] = useState({});
-  const [rooms, setRooms] = useState([]);
-  const [reminders, setReminders] = useState([]);
-  const [ownerId, setOwnerId] = useState(null);
-  const [selectedRenterId, setSelectedRenterId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false)
+  const [room, setRoom] = useState("")
+  const [date, setDate] = useState("")
+  const [note, setNote] = useState("")
+  const [errors, setErrors] = useState({})
+  const [rooms, setRooms] = useState([])
+  const [reminders, setReminders] = useState([])
+  const [ownerId, setOwnerId] = useState(null)
+  const [selectedRenterId, setSelectedRenterId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [roomsLoading, setRoomsLoading] = useState(false)
+  const [remindersLoading, setRemindersLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    const token = Cookies.get("token"); // Owner token
+    const token = Cookies.get("token") // Owner token
     if (!token) {
-      setLoading(false);
-      return;
+      setLoading(false)
+      return
     }
 
     axios
@@ -30,112 +44,124 @@ function Reminder() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setOwnerId(res.data.ownerId);
+        setOwnerId(res.data.ownerId)
       })
       .catch((err) => {
-        console.error("Error fetching current owner:", err);
+        console.error("Error fetching current owner:", err)
       })
       .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+        setLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
-    if (!ownerId) return;
-    const token = Cookies.get("token");
+    if (!ownerId) return
+    const token = Cookies.get("token")
 
+    setRoomsLoading(true)
     axios
       .get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setRooms(res.data);
-        console.log("Fetched unavailable rooms:", res.data);
+        setRooms(res.data)
+        console.log("Fetched unavailable rooms:", res.data)
       })
       .catch((err) => {
-        console.error("Failed to fetch unavailable rooms", err);
-      });
-  }, [ownerId]);
+        console.error("Failed to fetch unavailable rooms", err)
+      })
+      .finally(() => {
+        setRoomsLoading(false)
+      })
+  }, [ownerId])
 
   useEffect(() => {
-    if (!ownerId) return;
-    const token = Cookies.get("token");
+    if (!ownerId) return
+    const token = Cookies.get("token")
 
+    setRemindersLoading(true)
     axios
       .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
         const manualReminders = res.data.filter(
-          (r) => !r.note?.includes("Booking pending approval") && !r.note?.includes("Payment is due")
-        );
-        setReminders(manualReminders);
+          (r) => !r.note?.includes("Booking pending approval") && !r.note?.includes("Payment is due"),
+        )
+        setReminders(manualReminders)
       })
-      .catch((err) => console.error("Failed to fetch reminders", err));
-  }, [ownerId]);
+      .catch((err) => console.error("Failed to fetch reminders", err))
+      .finally(() => {
+        setRemindersLoading(false)
+      })
+  }, [ownerId])
 
   const handleAddClick = () => {
-    setShowModal(true);
-    setRoom("");
-    setDate("");
-    setNote("");
-    setSelectedRenterId(null);
-    setErrors({});
-  };
+    setShowModal(true)
+    setRoom("")
+    setDate("")
+    setNote("")
+    setSelectedRenterId(null)
+    setErrors({})
+  }
 
   const handleModalClose = (e) => {
     if (e.target === e.currentTarget) {
-      setShowModal(false);
-      setErrors({});
+      setShowModal(false)
+      setErrors({})
     }
-  };
+  }
 
   const validateForm = () => {
-    const newErrors = {};
-    if (!room) newErrors.room = "Room is required";
-    if (!date) newErrors.date = "Date is required";
-    if (!selectedRenterId) newErrors.room = "Selected room has no associated renter";
-    return newErrors;
-  };
+    const newErrors = {}
+    if (!room) newErrors.room = "Room is required"
+    if (!date) newErrors.date = "Date is required"
+    if (!selectedRenterId) newErrors.room = "Selected room has no associated renter"
+    return newErrors
+  }
 
   const handleDone = () => {
-    const formErrors = validateForm();
+    const formErrors = validateForm()
     if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return;
+      setErrors(formErrors)
+      return
     }
 
-    const selectedRoom = rooms.find((r) => r.roomId.toString() === room);
+    const selectedRoom = rooms.find((r) => r.roomId.toString() === room)
     const payload = {
-      room: { roomId: parseInt(room) },
+      room: { roomId: Number.parseInt(room) },
       renter: { renterId: selectedRenterId },
       owner: { ownerId: ownerId },
       dueDate: date,
       note: note,
       rentalFee: selectedRoom?.rentalFee || 0.0,
-    };
+    }
 
+    setSubmitting(true)
     axios
       .post("http://localhost:8080/payment_reminders", payload)
       .then((res) => {
-        setReminders((prev) => [...prev, res.data]);
-        setShowModal(false);
-        setRoom("");
-        setDate("");
-        setNote("");
-        setSelectedRenterId(null);
-        setErrors({});
+        setReminders((prev) => [...prev, res.data])
+        setShowModal(false)
+        setRoom("")
+        setDate("")
+        setNote("")
+        setSelectedRenterId(null)
+        setErrors({})
       })
       .catch((err) => {
-        console.error("Error creating reminder:", err);
-        alert("Failed to create reminder");
-      });
-  };
+        console.error("Error creating reminder:", err)
+        alert("Failed to create reminder")
+      })
+      .finally(() => {
+        setSubmitting(false)
+      })
+  }
 
   const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
+    const options = { year: "numeric", month: "long", day: "numeric" }
+    return new Date(dateString).toLocaleDateString(undefined, options)
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-60px)] bg-gradient-to-b from-cyan-50 to-white flex flex-col justify-center items-center p-6">
@@ -150,12 +176,16 @@ function Reminder() {
         </div>
 
         {loading && (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600"></div>
+          <div className="h-40 flex justify-center items-center">
+            <LoadingSpinner />
           </div>
         )}
 
-        {!loading && reminders.length === 0 ? (
+        {!loading && remindersLoading ? (
+          <div className="h-40 flex justify-center items-center">
+            <LoadingSpinner />
+          </div>
+        ) : !loading && reminders.length === 0 ? (
           <div className="text-center bg-white rounded-xl shadow-sm border border-gray-100 p-10 transition-all duration-300 hover:shadow-md">
             <div className="flex justify-center mb-6">
               <div className="p-6 bg-cyan-50 rounded-full">
@@ -242,9 +272,9 @@ function Reminder() {
                   label="Select Room"
                   value={room}
                   onChange={(val) => {
-                    setRoom(val);
-                    const selectedRoom = rooms.find((r) => r.roomId.toString() === val);
-                    setSelectedRenterId(selectedRoom?.renter?.renterId || null);
+                    setRoom(val)
+                    const selectedRoom = rooms.find((r) => r.roomId.toString() === val)
+                    setSelectedRenterId(selectedRoom?.renter?.renterId || null)
                   }}
                   className="border-cyan-500 focus:border-cyan-600"
                   containerProps={{ className: "min-w-[72px]" }}
@@ -304,9 +334,17 @@ function Reminder() {
               </Button>
               <Button
                 onClick={handleDone}
+                disabled={submitting}
                 className="bg-cyan-600 hover:bg-cyan-700 rounded-full px-8 shadow-md hover:shadow-lg transition-all"
               >
-                Save Reminder
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    <span>Saving...</span>
+                  </div>
+                ) : (
+                  "Save Reminder"
+                )}
               </Button>
             </div>
           </div>
@@ -335,7 +373,7 @@ function Reminder() {
         }
       `}</style>
     </div>
-  );
+  )
 }
 
-export default Reminder;
+export default Reminder
