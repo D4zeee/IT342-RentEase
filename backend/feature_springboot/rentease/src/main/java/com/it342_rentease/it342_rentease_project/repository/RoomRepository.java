@@ -9,5 +9,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     // Fetch rooms by ownerId
     List<Room> findByOwnerOwnerId(Long ownerId);
     List<Room> findByOwnerOwnerIdAndStatus(Long ownerId, String status);
+    long countByOwnerOwnerId(Long ownerId);
+long countByOwnerOwnerIdAndStatus(Long ownerId, String status);
+
 
 }

@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -172,4 +174,25 @@ public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long 
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // to display in the dashboard
+    @GetMapping("/owner/{ownerId}/room-stats")
+public ResponseEntity<Map<String, Long>> getRoomStatsByOwner(@PathVariable Long ownerId) {
+    try {
+        long total = roomRepository.countByOwnerOwnerId(ownerId);
+        long available = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "available");
+        long rented = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "rented");
+
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("total", total);
+        stats.put("available", available);
+        stats.put("rented", rented);
+
+        return ResponseEntity.ok(stats);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
 }
