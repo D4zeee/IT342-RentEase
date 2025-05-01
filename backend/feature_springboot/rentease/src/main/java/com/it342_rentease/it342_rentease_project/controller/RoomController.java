@@ -182,29 +182,29 @@ public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long 
 
 // Updated room-stats endpoint
 @GetMapping("/owner/{ownerId}/room-stats")
-public ResponseEntity<Map<String, Object>> getRoomStatsByOwner(@PathVariable Long ownerId) {
-    try {
-        // Count total, available, and rented rooms
-        long total = roomRepository.countByOwnerOwnerId(ownerId);
-        long available = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "available");
-        long rented = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "rented");
+    public ResponseEntity<Map<String, Object>> getRoomStatsByOwner(@PathVariable Long ownerId) {
+        try {
+            // Count total, available, and rented rooms
+            long total = roomRepository.countByOwnerOwnerId(ownerId);
+            long available = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "available");
+            long rented = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "rented");
 
-        // Calculate revenue from paid payments for rooms owned by ownerId
-        List<Payment> paidPayments = paymentRepository.findByRoomOwnerOwnerIdAndStatus(ownerId, "Paid");
-        double revenue = paidPayments.stream()
-                .mapToDouble(Payment::getAmount)
-                .sum();
+            // Calculate revenue from paid payments for rooms owned by ownerId
+            List<Payment> paidPayments = paymentRepository.findByRoomOwnerOwnerIdAndStatus(ownerId, "Paid");
+            double revenue = paidPayments.stream()
+                    .mapToDouble(Payment::getAmount)
+                    .sum();
 
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", total);
-        stats.put("available", available);
-        stats.put("rented", rented);
-        stats.put("revenue", revenue);
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("total", total);
+            stats.put("available", available);
+            stats.put("rented", rented);
+            stats.put("revenue", revenue);
 
-        return ResponseEntity.ok(stats);
-    } catch (Exception e) {
-        e.printStackTrace();
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-}
 }

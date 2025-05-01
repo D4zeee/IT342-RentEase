@@ -36,6 +36,8 @@ function Rooms() {
   const [imagePreviews, setImagePreviews] = useState([]) // Store the preview URLs
   // New state to track removed images
   const [removedImages, setRemovedImages] = useState([])
+  // Add this new state variable near the other state declarations at the top of the component
+  const [showErrorModal, setShowErrorModal] = useState(false)
 
   // Loading states
   const [ownerLoading, setOwnerLoading] = useState(true)
@@ -265,12 +267,21 @@ function Rooms() {
       })
   }
 
+  // Handle Delete Button Click
   const handleDelete = () => {
     if (roomToEdit) {
+      if (roomToEdit.status === "rented") {
+        // Show a dedicated error modal instead of just setting an error message
+        setError("This room cannot be deleted because it is currently rented.")
+        // Create a new state variable at the top of your component: const [showErrorModal, setShowErrorModal] = useState(false);
+        setShowErrorModal(true)
+        return
+      }
       setShowDeleteConfirm(true)
     }
   }
 
+  // Confirm Deletion
   const confirmDelete = () => {
     setDeleting(true)
     axios
@@ -780,6 +791,36 @@ function Rooms() {
                   ) : (
                     "Delete"
                   )}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+      {showErrorModal && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+          onClick={() => setShowErrorModal(false)}
+        >
+          <Card className="w-full max-w-sm bg-white shadow-2xl rounded-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-red-100 p-2 rounded-full">
+                  <X size={24} className="text-red-600" />
+                </div>
+                <Typography variant="h5" className="font-bold text-gray-800">
+                  Cannot Delete Property
+                </Typography>
+              </div>
+              <Typography variant="small" className="text-gray-600 mb-6">
+                {error}
+              </Typography>
+              <div className="flex justify-end">
+                <Button
+                  className="bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg"
+                  onClick={() => setShowErrorModal(false)}
+                >
+                  Understood
                 </Button>
               </div>
             </div>
