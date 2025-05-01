@@ -13,9 +13,11 @@ const Payments = () => {
 
   const query = new URLSearchParams(location.search);
   const paymentIntentId = query.get("payment_intent_id");
+ 
+
 
   useEffect(() => {
-    const token = Cookies.get("jwt_token");
+    const token = Cookies.get("token");
 
     // Fetch owner and their rooms
     axios.get("http://localhost:8080/owners/current-user", {
@@ -48,6 +50,7 @@ const Payments = () => {
       .then((res) => {
         const data = res.data;
         setPayment({
+          paymentId: data.paymentId,
           status: data.status,
           amount: data.amount,
           description: "RentEase Payment", // You can fetch this from the database if stored
@@ -61,6 +64,8 @@ const Payments = () => {
     }
   }, [paymentIntentId]);
 
+  
+
   return (
     <div className={styles.payments}>
       <h2>Payments Dashboard</h2>
@@ -70,6 +75,7 @@ const Payments = () => {
         <div className={styles.receipt}>
           <h3>🧾 Payment Receipt</h3>
           <p><strong>Status:</strong> <span style={{ color: payment.status === "Paid" ? "green" : "orange" }}>{payment.status}</span></p>
+          <p><strong>Payment ID:</strong> {payment.paymentId}</p>
           <p><strong>Amount:</strong> ₱{(payment.amount).toFixed(2)}</p>
           <p><strong>Payment Method:</strong> {payment.paymentMethod}</p>
           <p><strong>Reference ID:</strong> {payment.paymentIntentId}</p>

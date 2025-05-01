@@ -69,18 +69,18 @@ public class RoomController {
     }
 
     @GetMapping("/owner/{ownerId}/unavailable")
-    public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long ownerId) {
-        try {
-            System.out.println("Received GET request for unavailable rooms for owner ID: " + ownerId);
-            List<Room> rooms = roomService.getUnavailableRoomsByOwnerId(ownerId);
-            System.out.println("Returning " + rooms.size() + " unavailable rooms");
-            return ResponseEntity.ok(rooms);
-        } catch (Exception e) {
-            System.err.println("Error fetching unavailable rooms for owner ID " + ownerId + ": " + e.getMessage());
-            e.printStackTrace();
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long ownerId) {
+    try {
+        System.out.println("Received GET request for unavailable rooms for owner ID: " + ownerId);
+        List<Room> rooms = roomService.getUnavailableRoomsByOwnerId(ownerId);
+        System.out.println("Returning " + rooms.size() + " unavailable rooms");
+        return ResponseEntity.ok(rooms);
+    } catch (Exception e) {
+        System.err.println("Error fetching unavailable rooms for owner ID " + ownerId + ": " + e.getMessage());
+        e.printStackTrace();
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+}
 
     @GetMapping("/{roomId}")
     public ResponseEntity<Room> getRoomById(@PathVariable("roomId") Long roomId) {

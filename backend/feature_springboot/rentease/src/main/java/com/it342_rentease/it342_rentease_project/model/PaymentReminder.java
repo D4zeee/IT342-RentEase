@@ -25,6 +25,10 @@ public class PaymentReminder {
     @Column(name = "approval_status")
 private String approvalStatus = "pending"; // default pending
 
+@Column(name = "payment_status")
+private String paymentStatus = "unpaid"; // default value
+
+
 
 
 
@@ -35,6 +39,16 @@ private String approvalStatus = "pending"; // default pending
     private String note;
 
     // Getters and Setters
+
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+    
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+    
     public Long getReminderId() {
         return reminderId;
     }

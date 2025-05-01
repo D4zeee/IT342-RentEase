@@ -9,4 +9,6 @@ public interface RentedUnitRepository extends JpaRepository<RentedUnit, Long> {
     List<RentedUnit> findByRenterRenterId(Long renterId);
     List<RentedUnit> findByRoomRoomId(Long roomId);
     boolean existsByRoom_RoomIdAndRenter_RenterId(Long roomId, Long renterId);
+    
+    
 }

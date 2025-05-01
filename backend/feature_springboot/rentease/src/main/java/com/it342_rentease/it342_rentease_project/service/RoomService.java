@@ -3,8 +3,10 @@ package com.it342_rentease.it342_rentease_project.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.it342_rentease.it342_rentease_project.model.Owner;
+import com.it342_rentease.it342_rentease_project.model.RentedUnit;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.OwnerRepository;
+import com.it342_rentease.it342_rentease_project.repository.RentedUnitRepository;
 import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +36,9 @@ public class RoomService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+private RentedUnitRepository rentedUnitRepository;
 
     private final String supabaseUrl;
     private final String supabaseKey;
@@ -312,16 +317,18 @@ public class RoomService {
         return rooms;
     }
 
-    @Transactional
-    public List<Room> getUnavailableRoomsByOwnerId(Long ownerId) {
-        List<Room> rooms = roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
-        // Populate ownerId and ownerName for each room
-        for (Room room : rooms) {
-            if (room.getOwner() != null) {
-                room.setOwnerId(room.getOwner().getOwnerId());
-                room.setOwnerName(room.getOwner().getUsername());
-            }
+   @Transactional
+public List<Room> getUnavailableRoomsByOwnerId(Long ownerId) {
+    List<Room> rooms = roomRepository.findByOwnerOwnerIdAndStatus(ownerId, "rented");
+    for (Room room : rooms) {
+        if (room.getOwner() != null) {
+            room.setOwnerId(room.getOwner().getOwnerId());
+            room.setOwnerName(room.getOwner().getUsername());
         }
-        return rooms;
+        // Populate renter from RentedUnit
+        Optional<RentedUnit> rentedUnit = rentedUnitRepository.findByRoomRoomId(room.getRoomId()).stream().findFirst();
+        rentedUnit.ifPresent(unit -> room.setRenter(unit.getRenter()));
     }
+    return rooms;
+}
 }

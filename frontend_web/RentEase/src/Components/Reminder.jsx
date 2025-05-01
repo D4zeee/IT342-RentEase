@@ -1,27 +1,28 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Typography, Button, Input, Textarea, Select, Option } from "@material-tailwind/react"
-import { BellRing, Plus, Calendar, Home, X, AlertCircle } from 'lucide-react'
-import axios from "axios"
-import Cookies from "js-cookie"
+import { useState, useEffect } from "react";
+import { Typography, Button, Input, Textarea, Select, Option } from "@material-tailwind/react";
+import { BellRing, Plus, Calendar, Home, X, AlertCircle } from "lucide-react";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 function Reminder() {
-  const [showModal, setShowModal] = useState(false)
-  const [room, setRoom] = useState("")
-  const [date, setDate] = useState("")
-  const [note, setNote] = useState("")
-  const [errors, setErrors] = useState({})
-  const [rooms, setRooms] = useState([])
-  const [reminders, setReminders] = useState([])
-  const [ownerId, setOwnerId] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false);
+  const [room, setRoom] = useState("");
+  const [date, setDate] = useState("");
+  const [note, setNote] = useState("");
+  const [errors, setErrors] = useState({});
+  const [rooms, setRooms] = useState([]);
+  const [reminders, setReminders] = useState([]);
+  const [ownerId, setOwnerId] = useState(null);
+  const [selectedRenterId, setSelectedRenterId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = Cookies.get("token")
+    const token = Cookies.get("token"); // Owner token
     if (!token) {
-      setLoading(false)
-      return
+      setLoading(false);
+      return;
     }
 
     axios
@@ -29,117 +30,112 @@ function Reminder() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setOwnerId(res.data.ownerId)
+        setOwnerId(res.data.ownerId);
       })
       .catch((err) => {
-        console.error("Error fetching current owner:", err)
+        console.error("Error fetching current owner:", err);
       })
       .finally(() => {
-        setLoading(false)
-      })
-  }, [])
+        setLoading(false);
+      });
+  }, []);
 
   useEffect(() => {
-    if (!ownerId) return
-    const token = Cookies.get("token")
+    if (!ownerId) return;
+    const token = Cookies.get("token");
 
     axios
       .get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setRooms(res.data)
-        console.log("Fetched unavailable rooms:", res.data)
+        setRooms(res.data);
+        console.log("Fetched unavailable rooms:", res.data);
       })
       .catch((err) => {
-        console.error("Failed to fetch unavailable rooms", err)
-      })
-  }, [ownerId])
-
-  const handleAddClick = () => {
-    setShowModal(true)
-  }
+        console.error("Failed to fetch unavailable rooms", err);
+      });
+  }, [ownerId]);
 
   useEffect(() => {
-    if (!ownerId) return
-    const token = Cookies.get("token")
-  
+    if (!ownerId) return;
+    const token = Cookies.get("token");
+
     axios
       .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        const manualReminders = res.data.filter((r) =>
-          !r.note?.includes("Booking pending approval") && 
-          !r.note?.includes("Payment is due")
-        )
-        setReminders(manualReminders)
+        const manualReminders = res.data.filter(
+          (r) => !r.note?.includes("Booking pending approval") && !r.note?.includes("Payment is due")
+        );
+        setReminders(manualReminders);
       })
-      
-      .catch((err) => console.error("Failed to fetch reminders", err))
-  }, [ownerId])
-  
+      .catch((err) => console.error("Failed to fetch reminders", err));
+  }, [ownerId]);
+
+  const handleAddClick = () => {
+    setShowModal(true);
+    setRoom("");
+    setDate("");
+    setNote("");
+    setSelectedRenterId(null);
+    setErrors({});
+  };
 
   const handleModalClose = (e) => {
     if (e.target === e.currentTarget) {
-      setShowModal(false)
-      setErrors({})
+      setShowModal(false);
+      setErrors({});
     }
-  }
+  };
 
   const validateForm = () => {
-    const newErrors = {}
-    if (!room) newErrors.room = "Room is required"
-    if (!date) newErrors.date = "Date is required"
-    return newErrors
-  }
+    const newErrors = {};
+    if (!room) newErrors.room = "Room is required";
+    if (!date) newErrors.date = "Date is required";
+    if (!selectedRenterId) newErrors.room = "Selected room has no associated renter";
+    return newErrors;
+  };
 
   const handleDone = () => {
-    const formErrors = validateForm()
+    const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors)
-      return
+      setErrors(formErrors);
+      return;
     }
 
+    const selectedRoom = rooms.find((r) => r.roomId.toString() === room);
     const payload = {
       room: { roomId: parseInt(room) },
-      renter: { renterId: 1 }, // ⚠️ Replace with actual renter ID (or get from backend)
+      renter: { renterId: selectedRenterId },
       owner: { ownerId: ownerId },
       dueDate: date,
       note: note,
-      rentalFee: 0.0, // or get actual fee from selected room
-    }
+      rentalFee: selectedRoom?.rentalFee || 0.0,
+    };
 
     axios
       .post("http://localhost:8080/payment_reminders", payload)
       .then((res) => {
-        setReminders((prev) => [...prev, res.data]) // ⬅️ add new reminder to list
-        setShowModal(false)
-        setRoom("")
-        setDate("")
-        setNote("")
-        setErrors({})
+        setReminders((prev) => [...prev, res.data]);
+        setShowModal(false);
+        setRoom("");
+        setDate("");
+        setNote("");
+        setSelectedRenterId(null);
+        setErrors({});
       })
       .catch((err) => {
-        console.error("Error creating reminder:", err)
-        alert("Failed to create reminder")
-      })
+        console.error("Error creating reminder:", err);
+        alert("Failed to create reminder");
+      });
+  };
 
-    // You can submit the reminder here using axios.post
-    console.log("Reminder:", { room, date, note })
-
-    setShowModal(false)
-    setRoom("")
-    setDate("")
-    setNote("")
-    setErrors({})
-  }
-
-  // Format date to be more readable
   const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" }
-    return new Date(dateString).toLocaleDateString(undefined, options)
-  }
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
 
   return (
     <div className="relative min-h-[calc(100vh-60px)] bg-gradient-to-b from-cyan-50 to-white flex flex-col justify-center items-center p-6">
@@ -153,14 +149,12 @@ function Reminder() {
           </Typography>
         </div>
 
-        {/* Loading state */}
         {loading && (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600"></div>
           </div>
         )}
 
-        {/* Empty state */}
         {!loading && reminders.length === 0 ? (
           <div className="text-center bg-white rounded-xl shadow-sm border border-gray-100 p-10 transition-all duration-300 hover:shadow-md">
             <div className="flex justify-center mb-6">
@@ -210,7 +204,6 @@ function Reminder() {
         )}
       </div>
 
-      {/* ADD button */}
       <div className="fixed bottom-8 right-8 z-10">
         <Button
           size="lg"
@@ -222,17 +215,14 @@ function Reminder() {
         </Button>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
           onClick={handleModalClose}
-          style={{animation: "fadeIn 0.3s ease-out"}}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-[450px] p-8"
             onClick={(e) => e.stopPropagation()}
-            style={{animation: "scaleIn 0.3s ease-out"}}
           >
             <div className="flex justify-between items-center mb-6">
               <Typography variant="h4" color="blue-gray" className="font-bold">
@@ -247,17 +237,18 @@ function Reminder() {
             </div>
 
             <div className="flex flex-col gap-5">
-              {/* Room dropdown */}
               <div className="relative">
                 <Select
                   label="Select Room"
                   value={room}
-                  onChange={(val) => setRoom(val)}
+                  onChange={(val) => {
+                    setRoom(val);
+                    const selectedRoom = rooms.find((r) => r.roomId.toString() === val);
+                    setSelectedRenterId(selectedRoom?.renter?.renterId || null);
+                  }}
                   className="border-cyan-500 focus:border-cyan-600"
                   containerProps={{ className: "min-w-[72px]" }}
-                  labelProps={{
-                    className: "text-cyan-600",
-                  }}
+                  labelProps={{ className: "text-cyan-600" }}
                 >
                   {rooms.map((r) => (
                     <Option key={r.roomId} value={r.roomId.toString()}>
@@ -273,7 +264,6 @@ function Reminder() {
                 )}
               </div>
 
-              {/* Date input */}
               <div className="relative">
                 <Input
                   type="date"
@@ -281,9 +271,7 @@ function Reminder() {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="pl-3 border-cyan-500 focus:border-cyan-600"
-                  labelProps={{
-                    className: "text-cyan-600",
-                  }}
+                  labelProps={{ className: "text-cyan-600" }}
                   error={!!errors.date}
                 />
                 {errors.date && (
@@ -294,16 +282,13 @@ function Reminder() {
                 )}
               </div>
 
-              {/* Note input */}
               <div className="relative">
                 <Textarea
                   label="Note (Optional)"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="pl-3 border-cyan-500 focus:border-cyan-600"
-                  labelProps={{
-                    className: "text-cyan-600",
-                  }}
+                  labelProps={{ className: "text-cyan-600" }}
                   rows={4}
                 />
               </div>
@@ -350,7 +335,7 @@ function Reminder() {
         }
       `}</style>
     </div>
-  )
+  );
 }
 
-export default Reminder
+export default Reminder;

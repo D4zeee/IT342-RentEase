@@ -1,6 +1,7 @@
 package com.it342_rentease.it342_rentease_project.controller;
 
 import com.it342_rentease.it342_rentease_project.model.PaymentReminder;
+import com.it342_rentease.it342_rentease_project.model.RentedUnit;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.PaymentReminderRepository;
 import com.it342_rentease.it342_rentease_project.repository.RentedUnitRepository;
@@ -92,23 +93,31 @@ public ResponseEntity<List<PaymentReminder>> getByOwnerId(@PathVariable Long own
     }
 
     @PatchMapping("/{reminderId}/approve")
-public ResponseEntity<?> approveReminder(@PathVariable Long reminderId) {
-    Optional<PaymentReminder> reminderOpt = paymentReminderRepository.findById(reminderId);
+    public ResponseEntity<?> approveReminder(@PathVariable Long reminderId) {
+        Optional<PaymentReminder> reminderOpt = paymentReminderRepository.findById(reminderId);
+    
+        if (reminderOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+    
+        PaymentReminder reminder = reminderOpt.get();
+        Room room = reminder.getRoom();
 
-    if (reminderOpt.isEmpty()) {
-        return ResponseEntity.notFound().build();
+       
+
+        reminder.setApprovalStatus("approved");
+        room.setStatus("rented");
+        roomRepository.save(room);
+        paymentReminderRepository.save(reminder);
+    
+        // Create RentedUnit entry to link renter to room
+        RentedUnit rentedUnit = new RentedUnit();
+        rentedUnit.setRoom(room);
+        rentedUnit.setRenter(reminder.getRenter());
+        rentedUnitRepository.save(rentedUnit);
+    
+        return ResponseEntity.ok("Booking approved successfully.");
     }
-
-    PaymentReminder reminder = reminderOpt.get();
-    Room room = reminder.getRoom();
-
-    reminder.setApprovalStatus("approved");
-    room.setStatus("rented"); // ✅ now final rented
-    roomRepository.save(room);
-    paymentReminderRepository.save(reminder);
-
-    return ResponseEntity.ok("Booking approved successfully.");
-}
 
 @PatchMapping("/{reminderId}/deny")
 public ResponseEntity<?> denyReminder(@PathVariable Long reminderId) {

@@ -37,21 +37,18 @@ public class securityConfig {
             .csrf().disable()  // Disable CSRF for stateless JWT authentication
             .authorizeHttpRequests(authorizeRequests -> 
                 authorizeRequests
-                .requestMatchers("/owners/register").permitAll()
-                .requestMatchers("/api/renters/register", "/api/renters/login","/api/renters").permitAll() 
-                .requestMatchers("/owners/login").permitAll()               
-                    .requestMatchers("/rooms/**").permitAll()
-                    .requestMatchers("/rented_units").permitAll()
-                    .requestMatchers("/api/renters/current").hasRole("RENTER")
-                   
-
-                   
-                    .requestMatchers("/payments/**").permitAll()
-                    .requestMatchers("/payment_reminders/**").permitAll()
-                    .requestMatchers("/owners").permitAll()
-                    .requestMatchers("/owners/current-user").authenticated()  // Explicitly protect this endpoint
-                    .requestMatchers("/owners/current").authenticated()  // Explicitly protect this endpoint
-                    .anyRequest().authenticated()
+                .requestMatchers("/owners/register","/owners/login").permitAll()
+                .requestMatchers("/api/renters/register", "/api/renters/login").permitAll()               
+                .requestMatchers("/payment_reminders/**").permitAll()
+                .requestMatchers("/payments/**").permitAll()
+    
+                 // Authenticated
+                .requestMatchers("/rooms/**").authenticated()
+                .requestMatchers("/owners").authenticated()
+                .requestMatchers("/owners/current-user","/owners/current").authenticated()  // Explicitly protect this endpoint
+                .requestMatchers("/rented_units", "/rented_units/**").authenticated()
+                .requestMatchers("/api/renters/current", "/api/renters/**").authenticated()
+                .anyRequest().authenticated()
             )
             .formLogin().disable()
             .logout(logout -> logout

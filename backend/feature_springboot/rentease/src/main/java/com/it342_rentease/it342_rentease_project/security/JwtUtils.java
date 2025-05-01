@@ -56,7 +56,7 @@ public class JwtUtils {
     public String generateTokenForRenter(String email, Long renterId, String renterName) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("renterId", renterId);
-        claims.put("renterName", renterName);
+    
 
         return Jwts.builder()
                 .setClaims(claims)

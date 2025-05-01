@@ -3,11 +3,13 @@ package com.it342_rentease.it342_rentease_project.controller;
 import com.it342_rentease.it342_rentease_project.model.Payment;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
+import com.it342_rentease.it342_rentease_project.security.JwtUtils;
 import com.it342_rentease.it342_rentease_project.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -24,6 +26,9 @@ public class PaymentController {
 
     @Autowired
     private RoomRepository roomRepository;
+
+   
+
 
     @PostMapping("/intent")
     public ResponseEntity<Map<String, Object>> createPaymentIntent(@RequestBody Map<String, String> request) {
@@ -139,4 +144,22 @@ public class PaymentController {
                     .body(Map.of("error", "Failed to save payment: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/by-intent-id/{paymentIntentId}")
+public ResponseEntity<?> getPaymentByIntentId(@PathVariable String paymentIntentId,
+                                              @RequestHeader("Authorization") String authHeader) {
+    
+
+    Optional<Payment> payment = paymentService.getPaymentByIntentId(paymentIntentId);
+    if (payment.isPresent()) {
+        return ResponseEntity.ok(payment.get());
+    } else {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Payment not found"));
+    }
+}
+
+
+
+
+
 }

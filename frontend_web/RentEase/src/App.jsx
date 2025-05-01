@@ -19,6 +19,8 @@ import RenterLogin from './renterComponents/RenterLogin';
 import RenterLayout from './renterComponents/RenterLayout';
 import RenterNotifications from './renterComponents/RenterNotifications';
 import PaymentMethodPage from './renterComponents/PaymentMethodPage';
+import PaymentNotifications from './renterComponents/PaymentNotifications';
+import RenterReminder from './renterComponents/RenterReminder';
 
 
 
@@ -40,6 +42,8 @@ function App() {
         <Route path="/renter-layout" element={<RenterLayout />}/>
         <Route path="/renter-notif" element={<RenterNotifications />} />
         <Route path="/payment-method" element={<PaymentMethodPage />} />
+        <Route path="/payment-notif" element={<PaymentNotifications />} />
+        <Route path="/renter-reminder" element={<RenterReminder />} />
 
         
         

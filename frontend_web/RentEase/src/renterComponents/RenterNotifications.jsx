@@ -35,8 +35,8 @@ function RenterNotifications() {
                 const approvedReminders = allReminders
                     .filter(r => r.approvalStatus === "approved")
                     .sort((a, b) => {
-                        const dateCompare = new Date(b.dueDate) - new Date(a.dueDate);
-                        return dateCompare !== 0 ? dateCompare : b.reminderId - a.reminderId;
+                        
+                        return b.reminderId - a.reminderId;
                       });
         
                 const latest = approvedReminders[0];

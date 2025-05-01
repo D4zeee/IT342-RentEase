@@ -1,8 +1,10 @@
 package com.it342_rentease.it342_rentease_project.service;
 
 import com.it342_rentease.it342_rentease_project.model.Payment;
+import com.it342_rentease.it342_rentease_project.model.RentedUnit;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.PaymentRepository;
+import com.it342_rentease.it342_rentease_project.repository.RentedUnitRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -168,6 +170,13 @@ public class PaymentService {
     }
 
     public Payment savePayment(String paymentIntentId, Room room) {
+        // Check if this paymentIntentId was already saved
+        Optional<Payment> existingPayment = paymentRepository.findByPaymentIntentId(paymentIntentId);
+        if (existingPayment.isPresent()) {
+            logger.info("Payment with intentId " + paymentIntentId + " already exists. Skipping save.");
+            return existingPayment.get(); // Return the existing record
+        }
+    
         Map<String, Object> paymentIntent;
         try {
             paymentIntent = retrievePaymentIntent(paymentIntentId);
@@ -176,30 +185,42 @@ public class PaymentService {
             // Fallback: Save with default values
             Payment payment = new Payment();
             payment.setPaymentIntentId(paymentIntentId);
-            payment.setAmount(0.0f); // Default amount
+            payment.setAmount(0.0f);
             payment.setStatus("Pending");
             payment.setPaymentMethod("gcash");
-            payment.setPaidDate(null); // Set to null for failed retrieval
+            payment.setPaidDate(null);
             payment.setRoom(room);
             return paymentRepository.save(payment);
         }
-
+    
         Map<String, Object> data = (Map<String, Object>) paymentIntent.get("data");
         Map<String, Object> attributes = (Map<String, Object>) data.get("attributes");
-
+    
         String status = (String) attributes.get("status");
         Integer amount = (Integer) attributes.get("amount");
         List<String> paymentMethods = (List<String>) attributes.get("payment_method_allowed");
         String paymentMethod = paymentMethods != null && !paymentMethods.isEmpty() ? paymentMethods.get(0) : "gcash";
-
+    
         Payment payment = new Payment();
         payment.setPaymentIntentId(paymentIntentId);
         payment.setAmount(amount / 100.0f);
         payment.setStatus(status.equals("succeeded") ? "Paid" : "Pending");
         payment.setPaymentMethod(paymentMethod);
-        payment.setPaidDate(status.equals("succeeded") ? LocalDate.now() : null); // Set paid_date if status is succeeded
+        payment.setPaidDate(status.equals("succeeded") ? LocalDate.now() : null);
         payment.setRoom(room);
-
+    
         return paymentRepository.save(payment);
     }
+
+    public Optional<Payment> getPaymentByIntentId(String paymentIntentId) {
+        return paymentRepository.findByPaymentIntentId(paymentIntentId);
+    }
+
+ 
+    
+
+    
+    
+    
+    
 }

@@ -63,6 +63,9 @@ public class Room {
     @Transient
     private String ownerName;
 
+    @Transient // Not persisted to the database
+    private Renter renter; // Add transient renter field for API response
+
     // Getters and setters for transient fields
     public Long getOwnerId() {
         return ownerId;
@@ -176,4 +179,7 @@ public class Room {
     public void setPostalCode(String postalCode) {
         this.postalCode = postalCode;
     }
+
+    public Renter getRenter() { return renter; }
+    public void setRenter(Renter renter) { this.renter = renter; }
 }
