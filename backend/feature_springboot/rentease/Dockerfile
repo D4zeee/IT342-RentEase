@@ -1,25 +1,28 @@
 # Use official OpenJDK 17 base image
 FROM eclipse-temurin:17-jdk-jammy
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
+# Copy Maven wrapper and POM first to take advantage of Docker cache
 COPY mvnw* pom.xml ./
 COPY .mvn .mvn
 
-# Download dependencies (cached if pom.xml doesn't change)
+# ✅ Give execute permission to mvnw
 RUN chmod +x mvnw
+
+# Download dependencies (optional but speeds up builds if pom.xml unchanged)
 RUN ./mvnw dependency:go-offline
 
-# Copy the entire source code
+# Copy the full project
 COPY . .
 
-# Build the Spring Boot application
+# ✅ Just to be safe, set permission again (in case file system changes ownership after COPY)
+RUN chmod +x mvnw
+
+# Build the Spring Boot app
 RUN ./mvnw clean package -DskipTests
 
-# Expose port 8080 (the one Spring Boot uses)
 EXPOSE 8080
 
-# Run the built jar (update the name based on actual jar file!)
 CMD ["java", "-jar", "target/rentease-0.0.1-SNAPSHOT.jar"]
+
