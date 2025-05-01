@@ -1,24 +1,26 @@
-# Use an official OpenJDK 17 image
-FROM eclipse-temurin:17-jdk
+# Use Eclipse Temurin base image with Java 17
+FROM eclipse-temurin:17-jdk-jammy
 
+# Set working directory
 WORKDIR /app
 
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+# Copy Maven wrapper and POM file
+COPY mvnw* pom.xml ./
 
-# Download dependencies (this step is cached unless pom.xml changes)
+# Copy Maven wrapper folder (now exists!)
+COPY .mvn .mvn
+
+# Copy the rest of the app
+COPY src ./src
+
+# Give permission to mvnw
 RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
 
-# Copy the rest of the application code
-COPY . .
-
-# Make sure mvnw is executable after copying everything
-RUN chmod +x mvnw
-
-# Build the application
+# Build the app without tests
 RUN ./mvnw clean package -DskipTests
 
+# Expose port
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/WildWatch-0.0.1-SNAPSHOT.jar"]
+# Run the Spring Boot app
+CMD ["./mvnw", "spring-boot:run"]
