@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import axios from "axios"
 
@@ -7,8 +5,8 @@ function PayMongoTest() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
 
-  // Fallback for API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+  // Use the environment variable for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://it342-rentease.onrender.com"
 
   const handlePayment = async () => {
     setLoading(true)
