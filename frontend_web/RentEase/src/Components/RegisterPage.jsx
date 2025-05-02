@@ -18,7 +18,10 @@ function RegisterPage() {
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")  // New state for success message
+  const [successMessage, setSuccessMessage] = useState("")
+
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   // Check if the user is already logged in by checking for the token in cookies
   useEffect(() => {
@@ -63,11 +66,13 @@ function RegisterPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await axios.post("http://localhost:8080/owners/register", formData)
+      const response = await axios.post(
+        `${API_BASE_URL}/owners/register`,
+        formData
+      )
       console.log(response.data)
 
       setSuccessMessage("Registration successful! Redirecting to login...")
-
       setIsSubmitting(false)
       setTimeout(() => {
         navigate("/login")
@@ -85,7 +90,6 @@ function RegisterPage() {
 
   return (
     <div className="h-screen w-full fixed flex justify-center items-center">
-
       <div className="absolute inset-0 z-[-1]">
         <div
           className="absolute inset-0 bg-cover bg-center blur-[5px]"
@@ -115,7 +119,7 @@ function RegisterPage() {
             </Link>
           </div>
 
-          {/* sUCCESS MESSAGE */}
+          {/* Success Message */}
           {successMessage && (
             <div className="bg-green-500 text-white p-2 rounded-lg mb-4">
               <span>{successMessage}</span>
@@ -123,7 +127,6 @@ function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mx-auto w-[85%] flex flex-col gap-5">
-
             {/* Username */}
             <div className="relative"> 
               <div className="absolute top-4 left-3 text-gray-400">

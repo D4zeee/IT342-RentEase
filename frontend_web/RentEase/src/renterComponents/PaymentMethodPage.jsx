@@ -1,69 +1,73 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
-import Cookies from "js-cookie";
+"use client"
+
+import { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import axios from "axios"
+import Cookies from "js-cookie"
 
 function PaymentMethodPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { paymentIntentId, clientKey, roomId } = location.state || {}; // Receive roomId from state
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { paymentIntentId, clientKey, roomId } = location.state || {} // Receive roomId from state
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   useEffect(() => {
-    const token = Cookies.get("renterToken");
-    if (!token) return;
+    const token = Cookies.get("renterToken")
+    if (!token) return
 
     axios
-      .get("http://localhost:8080/api/renters/current", {
+      .get(`${API_BASE_URL}/api/renters/current`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setName(res.data.name);
-        setEmail(res.data.email);
+        setName(res.data.name)
+        setEmail(res.data.email)
       })
       .catch((err) => {
-        console.error("Failed to fetch renter info:", err.message);
-      });
-  }, []);
+        console.error("Failed to fetch renter info:", err.message)
+      })
+  }, [])
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!paymentIntentId || !clientKey) {
-      alert("Missing payment intent information.");
-      return;
+      alert("Missing payment intent information.")
+      return
     }
 
     try {
-      const methodResponse = await axios.post("http://localhost:8080/payments/method", {
+      const methodResponse = await axios.post(`${API_BASE_URL}/payments/method`, {
         name,
         email,
         phone,
-        type: "gcash"
-      });
+        type: "gcash",
+      })
 
-      const paymentMethodId = methodResponse.data.data.id;
+      const paymentMethodId = methodResponse.data.data.id
 
       const attachResponse = await axios.post(
-        `http://localhost:8080/payments/intent/attach/${paymentIntentId}`,
+        `${API_BASE_URL}/payments/intent/attach/${paymentIntentId}`,
         {
           payment_method: paymentMethodId,
           client_key: clientKey,
-          return_url: `http://localhost:5173/payment-success?payment_intent_id=${paymentIntentId}&room_id=${roomId}` // Pass roomId in URL
+          return_url: `http://localhost:5173/payment-success?payment_intent_id=${paymentIntentId}&room_id=${roomId}`, // Pass roomId in URL
         }
-      );
+      )
 
-      const checkoutUrl = attachResponse.data.data.attributes.next_action.redirect.url;
-      window.location.href = checkoutUrl;
-
+      const checkoutUrl = attachResponse.data.data.attributes.next_action.redirect.url
+      window.location.href = checkoutUrl
     } catch (error) {
-      console.error("Payment method or attach error:", error.response?.data || error.message);
-      alert("Failed to proceed with payment.");
+      console.error("Payment method or attach error:", error.response?.data || error.message)
+      alert("Failed to proceed with payment.")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center">
@@ -102,15 +106,12 @@ function PaymentMethodPage() {
           />
         </label>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        >
+        <button type="submit" className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
           Proceed to GCash
         </button>
       </form>
     </div>
-  );
+  )
 }
 
-export default PaymentMethodPage;
+export default PaymentMethodPage
