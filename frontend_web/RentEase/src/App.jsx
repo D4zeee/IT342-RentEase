@@ -38,7 +38,6 @@ function App() {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/renter-login" element={<RenterLogin />} />
         <Route path="/renter-dashboard" element={<RenterDashboard />} />
-        <Route path="/renter-login" element={<RenterLogin />} />
         <Route path="/renter-layout" element={<RenterLayout />}/>
         <Route path="/renter-notif" element={<RenterNotifications />} />
         <Route path="/payment-method" element={<PaymentMethodPage />} />
