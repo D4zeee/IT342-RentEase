@@ -18,7 +18,7 @@ function PaymentSuccess() {
   const [savedPayment, setSavedPayment] = useState(null);
 
   // Fallback for API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5173";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
   console.log("API_BASE_URL:", API_BASE_URL); // Debug log
 
   useEffect(() => {
