@@ -42,7 +42,7 @@ function PayMongoTest() {
       const methodId = methodRes.data.data.id;
 
       const returnUrl = `${
-        import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"
+        import.meta.env.VITE_FRONTEND_URL
       }/payment-success`;
       console.log("Constructed return_url:", returnUrl); // Debug log
 
