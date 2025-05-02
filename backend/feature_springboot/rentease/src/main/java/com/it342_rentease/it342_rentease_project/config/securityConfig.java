@@ -43,11 +43,11 @@ public class securityConfig {
                 .requestMatchers("/payments/**").permitAll()
     
                  // Authenticated
-                .requestMatchers("/rooms/**").authenticated()
-                .requestMatchers("/owners").authenticated()
-                .requestMatchers("/owners/current-user","/owners/current").authenticated()  // Explicitly protect this endpoint
-                .requestMatchers("/rented_units", "/rented_units/**").authenticated()
-                .requestMatchers("/api/renters/current", "/api/renters/**").authenticated()
+                .requestMatchers("/rooms/**").permitAll()
+                .requestMatchers("/owners").permitAll()
+                .requestMatchers("/owners/current-user","/owners/current").permitAll() // Explicitly protect this endpoint
+                .requestMatchers("/rented_units", "/rented_units/**").permitAll()
+                .requestMatchers("/api/renters/current", "/api/renters/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin().disable()
