@@ -15,17 +15,20 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ total: 0, available: 0, rented: 0, revenue: 0 })
   const [isLoading, setIsLoading] = useState(true)
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoading(true)
         const token = Cookies.get("token")
-        const ownerResponse = await axios.get("http://localhost:8080/owners/current-user", {
+        const ownerResponse = await axios.get(`${API_BASE_URL}/owners/current-user`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         const ownerId = ownerResponse.data.ownerId
 
-        const statsResponse = await axios.get(`http://localhost:8080/rooms/owner/${ownerId}/room-stats`, {
+        const statsResponse = await axios.get(`${API_BASE_URL}/rooms/owner/${ownerId}/room-stats`, {
           headers: { Authorization: `Bearer ${token}` },
         })
 

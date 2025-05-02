@@ -15,6 +15,9 @@ function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   // Check if the user is already logged in
   useEffect(() => {
     const token = Cookies.get("token")
@@ -41,7 +44,7 @@ function LoginPage() {
       setPassword(value)
     }
 
-    // Clear ikatype
+    // Clear error for the field
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -63,22 +66,22 @@ function LoginPage() {
     setErrors({})
   
     try {
-      const response = await axios.post("http://localhost:8080/owners/login", {
-        username,
-        password,
-      })
+      const response = await axios.post(
+        `${API_BASE_URL}/owners/login`,
+        {
+          username,
+          password,
+        }
+      )
       const { token } = response.data
       Cookies.set("token", token, { expires: 7 })
       navigate("/dashboard")
-      
     } catch (error) {
       setIsSubmitting(false)
       console.error("Login failed:", error)
-  
       setErrors({ general: "Invalid Credentials" })
     }
   }
-  
 
   return (
     <div className="h-screen w-full fixed flex justify-center items-center">
@@ -157,7 +160,7 @@ function LoginPage() {
               <p className="text-red-400 text-xs">{errors.general}</p>
             )}
              
-            {/* login button */}
+            {/* Login Button */}
             <div className="flex justify-center">
               <button
                 type="submit"

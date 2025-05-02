@@ -32,6 +32,9 @@ function Reminder() {
   const [remindersLoading, setRemindersLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   useEffect(() => {
     const token = Cookies.get("token") // Owner token
     if (!token) {
@@ -40,7 +43,7 @@ function Reminder() {
     }
 
     axios
-      .get("http://localhost:8080/owners/current-user", {
+      .get(`${API_BASE_URL}/owners/current-user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -60,7 +63,7 @@ function Reminder() {
 
     setRoomsLoading(true)
     axios
-      .get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
+      .get(`${API_BASE_URL}/rooms/owner/${ownerId}/unavailable`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -81,7 +84,7 @@ function Reminder() {
 
     setRemindersLoading(true)
     axios
-      .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
+      .get(`${API_BASE_URL}/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -139,7 +142,9 @@ function Reminder() {
 
     setSubmitting(true)
     axios
-      .post("http://localhost:8080/payment_reminders", payload)
+      .post(`${API_BASE_URL}/payment_reminders`, payload, {
+        headers: { Authorization: `Bearer ${Cookies.get("token")}` },
+      })
       .then((res) => {
         setReminders((prev) => [...prev, res.data])
         setShowModal(false)

@@ -1,4 +1,4 @@
-// src/pages/PayMongoTest.jsx
+"use client"
 
 import { useState } from "react"
 import axios from "axios"
@@ -7,18 +7,21 @@ function PayMongoTest() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   const handlePayment = async () => {
     setLoading(true)
     try {
       // Step 1: Create payment intent
-      const intentRes = await axios.post("http://localhost:8080/payments/intent", {
+      const intentRes = await axios.post(`${API_BASE_URL}/payments/intent`, {
         amount: "10000" // ₱100.00
       })
       const intentId = intentRes.data.data.id
       const clientKey = intentRes.data.data.attributes.client_key
 
       // Step 2: Create payment method
-      const methodRes = await axios.post("http://localhost:8080/payments/method", {
+      const methodRes = await axios.post(`${API_BASE_URL}/payments/method`, {
         name: "Juan Dela Cruz",
         email: "juan@example.com",
         phone: "09171234567",
@@ -27,7 +30,7 @@ function PayMongoTest() {
       const methodId = methodRes.data.data.id
 
       // Step 3: Attach method to intent
-      const attachRes = await axios.post(`http://localhost:8080/payments/intent/attach/${intentId}`, {
+      const attachRes = await axios.post(`${API_BASE_URL}/payments/intent/attach/${intentId}`, {
         payment_method: methodId,
         client_key: clientKey,
         return_url: "http://localhost:5173/payment-success"

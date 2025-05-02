@@ -34,9 +34,7 @@ function Rooms() {
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
   const [images, setImages] = useState([]) // Store the File objects
   const [imagePreviews, setImagePreviews] = useState([]) // Store the preview URLs
-  // New state to track removed images
   const [removedImages, setRemovedImages] = useState([])
-  // Add this new state variable near the other state declarations at the top of the component
   const [showErrorModal, setShowErrorModal] = useState(false)
 
   // Loading states
@@ -45,13 +43,16 @@ function Rooms() {
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   // Fetch current owner
   useEffect(() => {
     const token = Cookies.get("token")
     if (token) {
       setOwnerLoading(true)
       axios
-        .get("http://localhost:8080/owners/current-user", {
+        .get(`${API_BASE_URL}/owners/current-user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -79,7 +80,7 @@ function Rooms() {
     if (ownerId) {
       setRoomsLoading(true)
       axios
-        .get(`http://localhost:8080/rooms/owner/${ownerId}`, {
+        .get(`${API_BASE_URL}/rooms/owner/${ownerId}`, {
           headers: {
             Authorization: `Bearer ${Cookies.get("token")}`,
           },
@@ -201,7 +202,7 @@ function Rooms() {
       // Add a new room
       setSubmitting(true)
       axios
-        .post("http://localhost:8080/rooms", formData, {
+        .post(`${API_BASE_URL}/rooms`, formData, {
           headers: {
             Authorization: `Bearer ${Cookies.get("token")}`,
             "Content-Type": "multipart/form-data",
@@ -245,7 +246,7 @@ function Rooms() {
 
     setSubmitting(true)
     axios
-      .put(`http://localhost:8080/rooms/${roomToEdit.roomId}`, formData, {
+      .put(`${API_BASE_URL}/rooms/${roomToEdit.roomId}`, formData, {
         headers: {
           Authorization: `Bearer ${Cookies.get("token")}`,
           "Content-Type": "multipart/form-data",
@@ -273,7 +274,6 @@ function Rooms() {
       if (roomToEdit.status === "rented") {
         // Show a dedicated error modal instead of just setting an error message
         setError("This room cannot be deleted because it is currently rented.")
-        // Create a new state variable at the top of your component: const [showErrorModal, setShowErrorModal] = useState(false);
         setShowErrorModal(true)
         return
       }
@@ -285,7 +285,7 @@ function Rooms() {
   const confirmDelete = () => {
     setDeleting(true)
     axios
-      .delete(`http://localhost:8080/rooms/${roomToEdit.roomId}`, {
+      .delete(`${API_BASE_URL}/rooms/${roomToEdit.roomId}`, {
         headers: {
           Authorization: `Bearer ${Cookies.get("token")}`,
         },

@@ -11,6 +11,9 @@ function Notification() {
   const [reminders, setReminders] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   useEffect(() => {
     const token = Cookies.get("token")
     if (!token) {
@@ -19,7 +22,7 @@ function Notification() {
     }
 
     axios
-      .get("http://localhost:8080/owners/current-user", {
+      .get(`${API_BASE_URL}/owners/current-user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -36,7 +39,7 @@ function Notification() {
     const token = Cookies.get("token")
 
     axios
-      .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
+      .get(`${API_BASE_URL}/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -60,7 +63,7 @@ function Notification() {
   const handleApprove = (reminderId) => {
     const token = Cookies.get("token")
     axios
-      .patch(`http://localhost:8080/payment_reminders/${reminderId}/approve`, {}, {
+      .patch(`${API_BASE_URL}/payment_reminders/${reminderId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => window.location.reload())
@@ -70,7 +73,7 @@ function Notification() {
   const handleDeny = (reminderId) => {
     const token = Cookies.get("token")
     axios
-      .patch(`http://localhost:8080/payment_reminders/${reminderId}/deny`, {}, {
+      .patch(`${API_BASE_URL}/payment_reminders/${reminderId}/deny`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => window.location.reload())
