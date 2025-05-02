@@ -9,15 +9,15 @@ function PaymentSuccess() {
   const location = useLocation()
   const navigate = useNavigate()
   const query = new URLSearchParams(location.search)
-  const paymentIntentId = query.get("payment_intent_id") // Takes the first occurrence
+  const paymentIntentId = query.get("payment_intent_id")
   const roomId = query.get("room_id")
 
   const [status, setStatus] = useState("")
   const [amount, setAmount] = useState(0)
   const [description, setDescription] = useState("")
   const [savedPayment, setSavedPayment] = useState(null)
-  const [error, setError] = useState(null)
 
+  // Fallback for API base URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   useEffect(() => {
@@ -32,24 +32,29 @@ function PaymentSuccess() {
       try {
         const response = await axios.get(
           `${API_BASE_URL}/payments/intent/${paymentIntentId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         )
+
         const data = response.data.data.attributes
         setStatus(data.status)
         setAmount(data.amount)
         setDescription(data.description)
 
         if (data.status === "succeeded") {
-          await savePayment(token)
+          savePayment(token)
         }
       } catch (error) {
         console.error("Failed to fetch payment intent:", error.response?.data || error.message)
-        setError("Failed to fetch payment details")
+        setStatus("Unknown")
         if (error.response?.status === 401 || error.response?.status === 403) {
+          console.error("Authentication failed, redirecting to login")
           navigate("/renter-login")
           return
         }
-        await savePayment(token) // Attempt to save even if fetch fails
+        // Attempt to save payment even if fetch fails
+        savePayment(token)
       }
     }
 
@@ -58,15 +63,20 @@ function PaymentSuccess() {
         console.log("Saving payment with:", { paymentIntentId, roomId })
         const saveResponse = await axios.post(
           `${API_BASE_URL}/payments/save`,
-          { paymentIntentId, roomId },
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            paymentIntentId,
+            roomId,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         )
         console.log("Save payment response:", saveResponse.data)
         setSavedPayment(saveResponse.data)
       } catch (error) {
         console.error("Failed to save payment:", error.response?.data || error.message)
-        setError("Failed to save payment")
         if (error.response?.status === 401 || error.response?.status === 403) {
+          console.error("Authentication failed, redirecting to login")
           navigate("/renter-login")
         }
       }
@@ -76,14 +86,13 @@ function PaymentSuccess() {
       fetchPaymentDetails()
     } else {
       console.error("Missing paymentIntentId or roomId")
-      setError("Missing payment details in URL")
+      setStatus("Unknown")
     }
   }, [paymentIntentId, roomId, navigate])
 
   return (
     <div className="p-10 text-center">
       <h1 className="text-2xl font-bold">🎉 Payment {status === "succeeded" ? "Success" : "Status"}</h1>
-      {error && <p className="mt-4 text-red-600">{error}</p>}
       {status && (
         <p className="mt-4 text-lg">
           Status: <strong className={status === "succeeded" ? "text-green-600" : "text-orange-600"}>{status}</strong>
