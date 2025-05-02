@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import axios from "axios"
-import Cookies from "js-cookie"
 
 function PayMongoTest() {
   const [loading, setLoading] = useState(false)
@@ -10,8 +9,6 @@ function PayMongoTest() {
 
   // Fallback for API base URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
-  console.log("API_BASE_URL:", API_BASE_URL); // Debug log
-  console.log("VITE_FRONTEND_URL:", import.meta.env.VITE_FRONTEND_URL); // Debug log
 
   const handlePayment = async () => {
     const token = Cookies.get("renterToken");
@@ -28,7 +25,7 @@ function PayMongoTest() {
       );
       const intentId = intentRes.data.data.id;
       const clientKey = intentRes.data.data.attributes.client_key;
-
+  
       const methodRes = await axios.post(
         `${API_BASE_URL}/payments/method`,
         {
@@ -40,27 +37,22 @@ function PayMongoTest() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const methodId = methodRes.data.data.id;
-
-      const returnUrl = `${
-        import.meta.env.VITE_FRONTEND_URL
-      }/payment-success`;
-      console.log("Constructed return_url:", returnUrl); // Debug log
-
+  
       const attachRes = await axios.post(
         `${API_BASE_URL}/payments/intent/attach/${intentId}`,
         {
           payment_method: methodId,
           client_key: clientKey,
-          return_url: returnUrl
+          return_url: import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173/payment-success"
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
+  
       const redirectUrl = attachRes.data.data.attributes.next_action.redirect.url;
       setMessage("Redirecting to GCash...");
       window.location.href = redirectUrl;
     } catch (error) {
-      console.error("Payment error:", error.response?.data || error.message);
+      console.error(error);
       setMessage("Something went wrong. Check console.");
     } finally {
       setLoading(false);
