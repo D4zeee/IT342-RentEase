@@ -1,68 +1,63 @@
-"use client"
-
-import { useLocation, useNavigate } from "react-router-dom"
-import { useEffect, useState } from "react"
-import axios from "axios"
-import Cookies from "js-cookie"
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 function PaymentSuccess() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const query = new URLSearchParams(location.search)
-  const paymentIntentId = query.get("payment_intent_id")
-  const roomId = query.get("room_id")
+  const location = useLocation();
+  const navigate = useNavigate();
+  const query = new URLSearchParams(location.search);
+  const paymentIntentId = query.get("payment_intent_id");
+  const roomId = query.get("room_id");
 
-  const [status, setStatus] = useState("")
-  const [amount, setAmount] = useState(0)
-  const [description, setDescription] = useState("")
-  const [savedPayment, setSavedPayment] = useState(null)
-
-  // Fallback for API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+  const [status, setStatus] = useState("");
+  const [amount, setAmount] = useState(0);
+  const [description, setDescription] = useState("");
+  const [savedPayment, setSavedPayment] = useState(null);
 
   useEffect(() => {
     const fetchPaymentDetails = async () => {
-      const token = Cookies.get("renterToken")
+      const token = Cookies.get("renterToken");
       if (!token) {
-        console.error("No renter token found, redirecting to login")
-        navigate("/renter-login")
-        return
+        console.error("No renter token found, redirecting to login");
+        navigate("/renter-login");
+        return;
       }
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/payments/intent/${paymentIntentId}`,
+          `http://localhost:8080/payments/intent/${paymentIntentId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
-        )
+        );
 
-        const data = response.data.data.attributes
-        setStatus(data.status)
-        setAmount(data.amount)
-        setDescription(data.description)
+        const data = response.data.data.attributes;
+        setStatus(data.status);
+        setAmount(data.amount);
+        setDescription(data.description);
 
         if (data.status === "succeeded") {
-          savePayment(token)
+          savePayment(token);
         }
       } catch (error) {
-        console.error("Failed to fetch payment intent:", error.response?.data || error.message)
-        setStatus("Unknown")
+        console.error("Failed to fetch payment intent:", error.response?.data || error.message);
+        setStatus("Unknown");
         if (error.response?.status === 401 || error.response?.status === 403) {
-          console.error("Authentication failed, redirecting to login")
-          navigate("/renter-login")
-          return
+          console.error("Authentication failed, redirecting to login");
+          navigate("/renter-login");
+          return;
         }
         // Attempt to save payment even if fetch fails
-        savePayment(token)
+        savePayment(token);
       }
-    }
+    };
 
     const savePayment = async (token) => {
       try {
-        console.log("Saving payment with:", { paymentIntentId, roomId })
+        console.log("Saving payment with:", { paymentIntentId, roomId });
         const saveResponse = await axios.post(
-          `${API_BASE_URL}/payments/save`,
+          "http://localhost:8080/payments/save",
           {
             paymentIntentId,
             roomId,
@@ -70,25 +65,25 @@ function PaymentSuccess() {
           {
             headers: { Authorization: `Bearer ${token}` },
           }
-        )
-        console.log("Save payment response:", saveResponse.data)
-        setSavedPayment(saveResponse.data)
+        );
+        console.log("Save payment response:", saveResponse.data);
+        setSavedPayment(saveResponse.data);
       } catch (error) {
-        console.error("Failed to save payment:", error.response?.data || error.message)
+        console.error("Failed to save payment:", error.response?.data || error.message);
         if (error.response?.status === 401 || error.response?.status === 403) {
-          console.error("Authentication failed, redirecting to login")
-          navigate("/renter-login")
+          console.error("Authentication failed, redirecting to login");
+          navigate("/renter-login");
         }
       }
-    }
+    };
 
     if (paymentIntentId && roomId) {
-      fetchPaymentDetails()
+      fetchPaymentDetails();
     } else {
-      console.error("Missing paymentIntentId or roomId")
-      setStatus("Unknown")
+      console.error("Missing paymentIntentId or roomId");
+      setStatus("Unknown");
     }
-  }, [paymentIntentId, roomId, navigate])
+  }, [paymentIntentId, roomId, navigate]);
 
   return (
     <div className="p-10 text-center">
@@ -119,7 +114,7 @@ function PaymentSuccess() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default PaymentSuccess
+export default PaymentSuccess;
