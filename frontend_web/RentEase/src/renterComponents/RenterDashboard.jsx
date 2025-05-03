@@ -110,15 +110,29 @@ function RenterDashboard() {
         <h2 className="text-lg text-gray-600">
           {isLoading ? "Loading..." : `Renter ID: ${renterId || "Not Available"}`}
         </h2>
-        <button
-          onClick={() => {
-            Cookies.remove("renterToken")
-            navigate("/renter-login")
-          }}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
-        >
-          Logout
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate("/renter-notif")}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow"
+          >
+            Notifications
+          </button>
+          <button
+            onClick={() => navigate("/renter-reminder")}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow"
+          >
+            Reminders
+          </button>
+          <button
+            onClick={() => {
+              Cookies.remove("renterToken")
+              navigate("/renter-login")
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {isRoomsLoading ? (
@@ -157,14 +171,14 @@ function RenterDashboard() {
         </div>
       )}
 
-      {/* 🟦 Modal */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Select Dates</h2>
 
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">Start Date</label>
+              <label className="block text-gray-600 text-sm font-bold mb-2">Start Date</label>
               <input
                 type="date"
                 className="border border-gray-300 rounded px-3 py-2 w-full"
@@ -174,7 +188,7 @@ function RenterDashboard() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">End Date</label>
+              <label className="block text-gray-600 text-sm font-bold mb-2">End Date</label>
               <input
                 type="date"
                 className="border border-gray-300 rounded px-3 py-2 w-full"
