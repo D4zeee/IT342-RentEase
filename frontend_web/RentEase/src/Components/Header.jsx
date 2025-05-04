@@ -7,44 +7,47 @@ import { Search, ChevronDown } from "lucide-react"
 import axios from "axios"
 import Cookies from "js-cookie"
 
-function Header() {
+function Header({ initialUsername, initialOwnerId }) { // Accept props for initial data
   const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
-  const [username, setUsername] = useState("")
-  const [ownerId, setOwnerId] = useState("") // State to store ownerId
+  const [username, setUsername] = useState(initialUsername || "")
+  const [ownerId, setOwnerId] = useState(initialOwnerId || "") // Use initial values
 
   // Fallback for API base URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   useEffect(() => {
-    const token = Cookies.get("token")
+    // Only fetch if username and ownerId are not already set
+    if (!username && !ownerId) {
+      const token = Cookies.get("token")
 
-    console.log("Token:", token) // Debug: Log token
+      console.log("Token:", token) // Debug: Log token
 
-    if (token) {
-      axios
-        .get(`${API_BASE_URL}/owners/current-user`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then((response) => {
-          console.log("Current user response:", response.data) // Debug: Log response
-          setUsername(response.data.username)
-          setOwnerId(response.data.ownerId) // Set the ownerId
-        })
-        .catch((error) => {
-          console.error("Error fetching current user:", error.response?.data || error.message)
-          if (error.response?.status === 403 || error.response?.status === 401) {
-            navigate("/login") // Redirect to login on auth failure
-          }
-        })
-    } else {
-      console.warn("No token found, redirecting to login")
-      navigate("/login")
+      if (token) {
+        axios
+          .get(`${API_BASE_URL}/owners/current-user`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((response) => {
+            console.log("Current user response:", response.data) // Debug: Log response
+            setUsername(response.data.username)
+            setOwnerId(response.data.ownerId)
+          })
+          .catch((error) => {
+            console.error("Error fetching current user:", error.response?.data || error.message)
+            if (error.response?.status === 403 || error.response?.status === 401) {
+              navigate("/login")
+            }
+          })
+      } else {
+        console.warn("No token found, redirecting to login")
+        navigate("/login")
+      }
     }
-  }, [navigate])
+  }, [navigate, username, ownerId]) // Add username and ownerId as dependencies
 
   const titleMap = {
     "/dashboard": "Dashboard",
@@ -100,7 +103,7 @@ function Header() {
               {username || "Guest"}
             </Typography>
             <Typography variant="small" className="text-xs text-gray-500">
-              ID: {ownerId || "N/A"} {/* Display the ownerId */}
+              ID: {ownerId || "N/A"}
             </Typography>
           </div>
           <ChevronDown className="h-4 w-4 text-gray-500 transition-transform group-hover:text-gray-700 group-hover:rotate-180" />
