@@ -14,23 +14,20 @@ function Header() {
   const [username, setUsername] = useState("")
   const [ownerId, setOwnerId] = useState("") // State to store ownerId
 
-  // Fallback for API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
-
   useEffect(() => {
     const token = Cookies.get("token")
 
-    console.log("Token:", token) // Debug: Log token
+    // Removed: console.log("Token:", token)
 
     if (token) {
       axios
-        .get(`${API_BASE_URL}/owners/current-user`, {
+        .get("http://localhost:8080/owners/current-user", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
         .then((response) => {
-          console.log("Current user response:", response.data) // Debug: Log response
+          // Removed: console.log("Current user response:", response.data)
           setUsername(response.data.username)
           setOwnerId(response.data.ownerId) // Set the ownerId
         })
@@ -41,7 +38,7 @@ function Header() {
           }
         })
     } else {
-      console.warn("No token found, redirecting to login")
+      // Removed: console.warn("No token found, redirecting to login")
       navigate("/login")
     }
   }, [navigate])
@@ -58,7 +55,7 @@ function Header() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    console.log("Searching for:", searchQuery)
+    // Removed: console.log("Searching for:", searchQuery)
   }
 
   return (
