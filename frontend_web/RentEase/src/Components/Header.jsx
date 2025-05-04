@@ -8,18 +8,18 @@ import axios from "axios"
 import Cookies from "js-cookie"
 
 function Header() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [username, setUsername] = useState("")
-  const [ownerId, setOwnerId] = useState("") // State to store ownerId
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [username, setUsername] = useState("");
+  const [ownerId, setOwnerId] = useState("");
+  const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
-    const token = Cookies.get("token")
-
-    // Removed: console.log("Token:", token)
+    const token = Cookies.get("token");
 
     if (token) {
+      setLoading(true); // Start loading
       axios
         .get("http://localhost:8080/owners/current-user", {
           headers: {
@@ -27,21 +27,24 @@ function Header() {
           },
         })
         .then((response) => {
-          // Removed: console.log("Current user response:", response.data)
-          setUsername(response.data.username)
-          setOwnerId(response.data.ownerId) // Set the ownerId
-        })
-        .catch((error) => {
-          console.error("Error fetching current user:", error.response?.data || error.message)
-          if (error.response?.status === 403 || error.response?.status === 401) {
-            navigate("/login") // Redirect to login on auth failure
+          if (response.data && response.data.username && response.data.ownerId) {
+            setUsername(response.data.username);
+            setOwnerId(response.data.ownerId);
           }
         })
+        .catch((error) => {
+          console.error("Error fetching current user:", error.response || error.message);
+          if (error.response?.status === 403 || error.response?.status === 401) {
+            navigate("/login");
+          }
+        })
+        .finally(() => {
+          setLoading(false); // Stop loading
+        });
     } else {
-      // Removed: console.warn("No token found, redirecting to login")
-      navigate("/login")
+      navigate("/login");
     }
-  }, [navigate])
+  }, [navigate]);
 
   const titleMap = {
     "/dashboard": "Dashboard",
@@ -49,14 +52,13 @@ function Header() {
     "/payments": "Payments",
     "/reminder": "Reminder",
     "/notifications": "Notification",
-  }
+  };
 
-  const title = titleMap[location.pathname] || "Dashboard"
+  const title = titleMap[location.pathname] || "Dashboard";
 
   const handleSearch = (e) => {
-    e.preventDefault()
-    // Removed: console.log("Searching for:", searchQuery)
-  }
+    e.preventDefault();
+  };
 
   return (
     <header className="relative flex items-center justify-between bg-white px-8 py-4 border-b border-gray-200 shadow-sm">
@@ -94,17 +96,17 @@ function Header() {
           />
           <div className="flex flex-col">
             <Typography variant="small" className="font-semibold text-gray-800 group-hover:text-gray-900">
-              {username || "Guest"}
+              {loading ? "Loading..." : (username || "Guest")} {/* Show loading state */}
             </Typography>
             <Typography variant="small" className="text-xs text-gray-500">
-              ID: {ownerId || "N/A"} {/* Display the ownerId */}
+              ID: {loading ? "Loading..." : (ownerId || "N/A")} {/* Show loading state */}
             </Typography>
           </div>
           <ChevronDown className="h-4 w-4 text-gray-500 transition-transform group-hover:text-gray-700 group-hover:rotate-180" />
         </div>
       </div>
     </header>
-  )
+  );
 }
 
 export default Header
