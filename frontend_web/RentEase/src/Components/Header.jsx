@@ -14,6 +14,9 @@ function Header() {
   const [username, setUsername] = useState("")
   const [ownerId, setOwnerId] = useState("") // State to store ownerId
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   useEffect(() => {
     const token = Cookies.get("token")
 
@@ -21,7 +24,7 @@ function Header() {
 
     if (token) {
       axios
-        .get("http://localhost:8080/owners/current-user", {
+        .get(`${API_BASE_URL}/owners/current-user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -49,7 +52,6 @@ function Header() {
     "/payments": "Payments",
     "/reminder": "Reminder",
     "/notifications": "Notification",
-
   }
 
   const title = titleMap[location.pathname] || "Dashboard"
