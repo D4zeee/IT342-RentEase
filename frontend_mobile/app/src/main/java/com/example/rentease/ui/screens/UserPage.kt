@@ -66,8 +66,8 @@ fun UserPage(
     val dividerColor = Color(0xFFE0E0E0)
 
     LaunchedEffect(Unit) {
-        val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
-        val token = prefs.getString("jwt_token", null)
+        val prefs = context.getSharedPreferences("RentEasePrefs", Context.MODE_PRIVATE)
+        val token = prefs.getString("renterToken", null)
 
         if (!token.isNullOrBlank()) {
             try {

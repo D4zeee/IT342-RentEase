@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
 
-    private const val BASE_URL = "http://10.0.2.2:8080" // Use 10.0.2.2 & 192.168.1.5 if you're on Android Emulator
+    private const val BASE_URL = "http://10.0.2.2:8080/" // Use "http://10.0.2.2:8080/" or "https://it342-rentease.onrender.com" if you're on Android Emulator
 
     val api: ApiService by lazy {
         Retrofit.Builder()

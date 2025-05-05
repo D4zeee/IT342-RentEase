@@ -130,9 +130,22 @@ fun AppNavigation(navController: NavHostController) {
         composable("book_page/{roomId}") { backStackEntry ->
             val roomId = backStackEntry.arguments?.getString("roomId")
             BookPage(
+                navController = navController,
                 roomId = roomId,
-                onBackClick = { navController.popBackStack() },
-                onBookNowClick = { /* Booking Action */ }
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable("book_success/{roomId}/{startDate}/{endDate}") { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            val startDate = backStackEntry.arguments?.getString("startDate")
+            val endDate = backStackEntry.arguments?.getString("endDate")
+
+            BookSuccessPage(
+                navController = navController,
+                roomId = roomId,
+                startDate = startDate,
+                endDate = endDate
             )
         }
 

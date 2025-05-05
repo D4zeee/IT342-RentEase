@@ -48,19 +48,28 @@ fun DashboardPage(
     var myRentedRooms by remember { mutableStateOf<List<Room>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var rentedUnits by remember { mutableStateOf<List<RentedUnit>>(emptyList()) }
+    val context = LocalContext.current
+
 
     LaunchedEffect(Unit) {
         scope.launch {
+            val sharedPreferences = context.getSharedPreferences("RentEasePrefs", android.content.Context.MODE_PRIVATE)
+            val token = sharedPreferences.getString("renterToken", null)
+            if (token.isNullOrEmpty()) {
+                Log.e("Dashboard", "No token found")
+                isLoading = false
+                return@launch
+            }
+
             try {
-                val rentedResponse = RetrofitInstance.api.getAllRentedUnits() // Or getRentedUnitsByRenterId(id)
-                val roomResponse = RetrofitInstance.api.getAllRooms()
+                val rentedResponse = RetrofitInstance.api.getAllRentedUnits("Bearer $token")
+                val roomResponse = RetrofitInstance.api.getAllRooms("Bearer $token")
 
                 if (rentedResponse.isSuccessful && roomResponse.isSuccessful) {
                     rentedUnits = rentedResponse.body() ?: emptyList()
                     val allRooms = roomResponse.body() ?: emptyList()
                     roomList = allRooms
 
-                    // Get only the rooms that match rented roomIds
                     val rentedRoomIds = rentedUnits.map { it.roomId }.toSet()
                     myRentedRooms = allRooms.filter { it.roomId in rentedRoomIds }
                 } else {
@@ -287,11 +296,15 @@ fun DashboardPage(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Featured Rooms Horizontal Scroll
+                // Featured Rooms Horizontal Scroll - exclude "Booked" and "Rented"
+                val featuredRooms = roomList
+                    .filter { it.status.equals("Available", ignoreCase = true) }
+                    .take(5)
+
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(roomList.take(5)) { room ->
+                    items(featuredRooms) { room ->
                         FeaturedRoomCard(
                             room = room,
                             onClick = { onPropertyClick(room.roomId.toString()) }
@@ -417,8 +430,6 @@ fun FeaturedRoomCard(
     room: Room,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Card(
         modifier = Modifier
             .width(200.dp)
@@ -435,18 +446,13 @@ fun FeaturedRoomCard(
                 val imageUrl = room.imagePaths.firstOrNull()
 
                 AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(imageUrl ?: R.drawable.default_property)
-                        .crossfade(true)
-                        .build(),
+                    model = imageUrl,
                     contentDescription = room.unitName,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                     placeholder = painterResource(id = R.drawable.default_property),
                     error = painterResource(id = R.drawable.default_property)
                 )
-
-                // Price tag with teal box has been removed
             }
 
             Column(
@@ -462,7 +468,7 @@ fun FeaturedRoomCard(
                 )
 
                 Text(
-                    text = "₱${room.rentalFee}",
+                    text = "₱${String.format("%.2f", room.rentalFee)}",
                     fontSize = 12.sp,
                     color = Color.Gray,
                     maxLines = 1,
@@ -472,3 +478,5 @@ fun FeaturedRoomCard(
         }
     }
 }
+
+

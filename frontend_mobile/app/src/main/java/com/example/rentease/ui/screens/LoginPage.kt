@@ -64,10 +64,11 @@ fun LoginPage(
                 if (response.isSuccessful) {
                     val token = response.body()?.jwt
                     token?.let {
-                        val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+                        val prefs = context.getSharedPreferences("RentEasePrefs", Context.MODE_PRIVATE)
                         prefs.edit {
-                            putString("jwt_token", it)
+                            putString("renterToken", it)
                         }
+
 
                         withContext(Dispatchers.Main) {
                             isLoading = false

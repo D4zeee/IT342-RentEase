@@ -1,5 +1,6 @@
 package com.example.rentease.ui.screens
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -63,20 +64,61 @@ fun RoomsPage(
     var errorMessage by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
     var searchText by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         scope.launch {
+            val sharedPreferences = context.getSharedPreferences("RentEasePrefs", Context.MODE_PRIVATE)
+            val token = sharedPreferences.getString("renterToken", null)
+
+            if (token.isNullOrEmpty()) {
+                Log.e("RoomsPage", "Token is missing")
+                isLoading = false
+                hasError = true
+                errorMessage = "Authorization token is missing."
+                return@launch
+            }
+
+            val authHeader = "Bearer $token"
+
             try {
                 isLoading = true
                 hasError = false
-                val response = RetrofitInstance.api.getAllRooms()
-                if (response.isSuccessful) {
-                    roomList = response.body() ?: emptyList()
+
+                // 1. Fetch current renter
+                val userResponse = RetrofitInstance.api.getCurrentUser(authHeader)
+                if (!userResponse.isSuccessful) {
+                    hasError = true
+                    errorMessage = "Failed to get current renter."
+                    return@launch
+                }
+
+                val userMap = userResponse.body()
+                val renterId = (userMap?.get("renterId") as? Double)?.toLong() // from Map<String, Any>
+
+                if (renterId == null) {
+                    hasError = true
+                    errorMessage = "Invalid renter ID."
+                    return@launch
+                }
+
+                // 2. Fetch all rooms (to get "Available" ones)
+                val allRoomsResponse = RetrofitInstance.api.getAllRooms(authHeader)
+
+                // 3. Fetch rooms rented or booked by this renter
+                val myRoomsResponse = RetrofitInstance.api.getRenterRooms(authHeader, renterId)
+
+                if (allRoomsResponse.isSuccessful && myRoomsResponse.isSuccessful) {
+                    val allRooms = allRoomsResponse.body() ?: emptyList()
+                    val myRooms = myRoomsResponse.body() ?: emptyList()
+
+                    // Combine: all available rooms + only booked/rented rooms of the current user
+                    roomList = allRooms.filter { it.status.equals("available", ignoreCase = true) } + myRooms
                 } else {
                     hasError = true
-                    errorMessage = "Error fetching rooms: ${response.code()}"
-                    Log.e("RoomsPage", errorMessage)
+                    errorMessage = "Error fetching rooms: ${allRoomsResponse.code()} / ${myRoomsResponse.code()}"
                 }
+
             } catch (e: Exception) {
                 hasError = true
                 errorMessage = "Exception: ${e.message}"
@@ -257,13 +299,13 @@ fun RoomsPage(
 
                     // Booked Filter
                     Surface(
-                        onClick = { selectedFilter = "Booked" },
+                        onClick = { selectedFilter = "unavailable" },
                         modifier = Modifier.height(36.dp),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (selectedFilter == "Booked") tealColor else Color.White,
+                        color = if (selectedFilter == "unavailable") tealColor else Color.White,
                         border = BorderStroke(
                             width = 1.dp,
-                            color = if (selectedFilter == "Booked") Color.Transparent else Color.LightGray
+                            color = if (selectedFilter == "unavailable") Color.Transparent else Color.LightGray
                         )
                     ) {
                         Box(
@@ -271,10 +313,10 @@ fun RoomsPage(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "Booked",
+                                "Unavailable",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (selectedFilter == "Booked") Color.White else Color.DarkGray
+                                color = if (selectedFilter == "unavailable") Color.White else Color.DarkGray
                             )
                         }
                     }
@@ -347,7 +389,11 @@ fun RoomsPage(
                                             try {
                                                 isLoading = true
                                                 hasError = false
-                                                val response = RetrofitInstance.api.getAllRooms()
+                                                val sharedPreferences = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+                                                val token = sharedPreferences.getString("token", null)
+                                                val authHeader = "Bearer $token"
+
+                                                val response = RetrofitInstance.api.getAllRooms(authHeader)
                                                 if (response.isSuccessful) {
                                                     roomList = response.body() ?: emptyList()
                                                 } else {
@@ -439,7 +485,7 @@ fun RoomsPage(
                                         room = RoomUnit(
                                             id = room.roomId.toString(),
                                             name = room.unitName,
-                                            price = "₱${room.rentalFee}",
+                                            price = "₱${String.format("%.2f", room.rentalFee)}",
                                             imageUrl = room.imagePaths.firstOrNull(),
                                             status = room.status
                                         ),
@@ -525,7 +571,7 @@ fun RoomItem(
                         .background(
                             color = when(room.status?.lowercase()) {
                                 "available" -> Color(0xFF4CAF50)
-                                "booked" -> Color(0xFFFF9800)
+                                "unavailable" -> Color(0xFFFF9800)
                                 "rented" -> Color(0xFF2196F3)
                                 else -> Color(0xFF4CAF50)
                             }
@@ -535,7 +581,7 @@ fun RoomItem(
                     Icon(
                         imageVector = when(room.status?.lowercase()) {
                             "available" -> Icons.Default.CheckCircle
-                            "booked" -> Icons.Default.Schedule
+                            "unavailable" -> Icons.Default.Schedule
                             "rented" -> Icons.Default.Home
                             else -> Icons.Default.CheckCircle
                         },
@@ -547,7 +593,7 @@ fun RoomItem(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
-                        text = room.status ?: "Available",
+                        text = room.status?.replaceFirstChar { it.uppercase() } ?: "Available",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White // White text for better contrast on colored backgrounds

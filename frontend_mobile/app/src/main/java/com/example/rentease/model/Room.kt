@@ -11,7 +11,7 @@ data class Room(
     val postalCode: String,
     val status: String,
     val numberOfRooms: Int,
-    val imagePaths: List<String> = emptyList(),
+    val imagePaths: List<String> = emptyList(), // ✅ This must exist to show images
     val ownerId: Long?,       // 🔥 ADD THIS
     val ownerName: String?    // 🔥 ADD THIS
 )
