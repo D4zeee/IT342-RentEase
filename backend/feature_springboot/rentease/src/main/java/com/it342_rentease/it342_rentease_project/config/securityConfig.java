@@ -22,7 +22,6 @@ import com.it342_rentease.it342_rentease_project.service.OwnerDetailsService;
 
 import org.springframework.http.HttpMethod;
 
-
 @Configuration
 @EnableWebSecurity
 public class securityConfig {
@@ -33,36 +32,37 @@ public class securityConfig {
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .cors().configurationSource(corsConfigurationSource()).and()
-            .csrf().disable()  // Disable CSRF for stateless JWT authentication
-            .authorizeHttpRequests(authorizeRequests -> 
-                authorizeRequests
-                .requestMatchers("/owners/register","/owners/login").permitAll()
-                .requestMatchers("/api/renters/register", "/api/renters/login").permitAll()               
-                .requestMatchers("/payment_reminders/**").permitAll()
-                .requestMatchers("/payments/**").permitAll()
-    
-                 // Authenticated
-                .requestMatchers("/rooms/**").authenticated()
-                .requestMatchers("/owners").authenticated()
-                .requestMatchers("/owners/current-user","/owners/current").authenticated()  // Explicitly protect this endpoint
-                .requestMatchers("/rented_units", "/rented_units/**").authenticated()
-                .requestMatchers("/api/renters/current", "/api/renters/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .formLogin().disable()
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Use stateless sessions for JWT
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // Add JWT filter
-            .build();
+                .cors().configurationSource(corsConfigurationSource()).and()
+                .csrf().disable() // Disable CSRF for stateless JWT authentication
+                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+                        .requestMatchers("/owners/register", "/owners/login").permitAll()
+                        .requestMatchers("/api/renters/register", "/api/renters/login").permitAll()
+                        .requestMatchers("/payment_reminders/**").permitAll()
+                        .requestMatchers("/payments/**").permitAll()
+
+                        // ✅ Public access to room images
+                        .requestMatchers(HttpMethod.GET, "/rooms/image/**").permitAll()
+
+                        // 🔐 Authenticated routes
+                        .requestMatchers("/rooms/**").permitAll()
+                        .requestMatchers("/owners").permitAll()
+                        .requestMatchers("/owners/current-user", "/owners/current").permitAll()
+                        .requestMatchers("/rented_units", "/rented_units/**").permitAll()
+                        .requestMatchers("/api/renters/current", "/api/renters/**").permitAll()
+                        .anyRequest().permitAll())
+
+                .formLogin().disable()
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Use stateless sessions for JWT
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
+                .build();
     }
 
     @Bean
@@ -72,7 +72,7 @@ public class securityConfig {
         corsConfiguration.addAllowedOrigin("http://192.168.1.5:8080");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
-        corsConfiguration.setAllowCredentials(true);  // Allow cookies/credentials
+        corsConfiguration.setAllowCredentials(true); // Allow cookies/credentials
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
@@ -83,23 +83,22 @@ public class securityConfig {
         return new BCryptPasswordEncoder();
     }
 
-   @Bean
-public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration config,
-        DaoAuthenticationProvider daoAuthenticationProvider
-) throws Exception {
-    return new ProviderManager(daoAuthenticationProvider);
-}
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config,
+            DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
+        return new ProviderManager(daoAuthenticationProvider);
+    }
 
     @Bean
-public DaoAuthenticationProvider daoAuthenticationProvider(OwnerDetailsService ownerDetailsService) {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-    provider.setUserDetailsService(ownerDetailsService);
-    provider.setPasswordEncoder(passwordEncoder());  // use your existing password encoder
-    return provider;
-}
+    public DaoAuthenticationProvider daoAuthenticationProvider(OwnerDetailsService ownerDetailsService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(ownerDetailsService);
+        provider.setPasswordEncoder(passwordEncoder()); // use your existing password encoder
+        return provider;
+    }
 
-@Bean
+    @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }

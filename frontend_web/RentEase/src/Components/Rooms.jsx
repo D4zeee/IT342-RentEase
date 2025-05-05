@@ -57,22 +57,23 @@ function Rooms() {
 
     // Fetch rooms by ownerId
     useEffect(() => {
-        if (ownerId) {
-            axios
-                .get(`http://localhost:8080/rooms/owner/${ownerId}`, {
-                    headers: {
-                        Authorization: `Bearer ${Cookies.get("token")}`,
-                    },
-                })
-                .then((response) => {
-                    setRooms(response.data)
-                    console.log("Fetched rooms:", response.data)
-                })
-                .catch((error) => {
-                    console.error("Error fetching rooms:", error.response?.data || error.message)
-                })
+        const fetchRooms = () => {
+            axios.get(`http://localhost:8080/rooms/owner/${ownerId}`, {
+                headers: { Authorization: `Bearer ${Cookies.get("token")}` },
+            })
+            .then((response) => setRooms(response.data))
+            .catch((error) => console.error("Error fetching rooms:", error.response?.data || error.message));
         }
-    }, [ownerId])
+    
+        if (ownerId) {
+            fetchRooms();
+    
+            // Optional: setInterval to poll every 30 seconds
+            const interval = setInterval(fetchRooms, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [ownerId]);
+    
 
     // Handle image selection
     const handleImageChange = (e) => {
@@ -326,7 +327,7 @@ function Rooms() {
                                         Status: <span className={room.status === "rented" ? "text-red-500" : 
                                         room.status === "unavailable" ? "text-yellow-500" : 
                                 "text-green-600"}>
-                                {room.status === "rented" ? "Unavailable" : room.status === "unavailable" ? "Pending Approval" : "Available"}
+                                {room.status === "rented" ? "unavailable" : room.status === "unavailable" ? "Pending Approval" : "Available"}
 
                             </span>
                                     </p>

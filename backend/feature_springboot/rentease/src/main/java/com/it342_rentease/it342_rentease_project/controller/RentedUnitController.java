@@ -32,7 +32,7 @@ public class RentedUnitController {
     public ResponseEntity<Map<String, Object>> create(@RequestBody RentedUnit unit) {
         RentedUnit savedUnit = rentedUnitService.save(unit);
 
-        String amount = String.valueOf((int)(savedUnit.getRoom().getRentalFee()));
+        String amount = String.valueOf((int) (savedUnit.getRoom().getRentalFee()));
         Map<String, Object> paymentIntent = paymentService.createPaymentIntent(amount);
 
         Map<String, Object> paymentData = (Map<String, Object>) paymentIntent.get("data");
@@ -61,7 +61,7 @@ public class RentedUnitController {
     public ResponseEntity<RentedUnit> getById(@PathVariable Long id) {
         Optional<RentedUnit> unit = rentedUnitService.getById(id);
         return unit.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                   .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping("/renter/{renterId}")
@@ -93,16 +93,28 @@ public class RentedUnitController {
         }
 
         Room room = roomOptional.get();
-        String amount = String.valueOf((int)(room.getRentalFee()));
+        String amount = String.valueOf((int) (room.getRentalFee()));
         Map<String, Object> paymentIntent = paymentService.createPaymentIntent(amount);
 
         Map<String, Object> data = (Map<String, Object>) paymentIntent.get("data");
         Map<String, Object> attributes = (Map<String, Object>) data.get("attributes");
 
         return ResponseEntity.ok(Map.of(
-            "paymentIntentId", (String) data.get("id"),
-            "clientKey", (String) attributes.get("client_key"),
-            "roomId", roomId // Include roomId in the response
+                "paymentIntentId", (String) data.get("id"),
+                "clientKey", (String) attributes.get("client_key"),
+                "roomId", roomId // Include roomId in the response
         ));
+
+    }
+
+    @GetMapping("/renter/{renterId}/rooms")
+    public ResponseEntity<List<Room>> getBookedOrRentedRoomsForRenter(@PathVariable Long renterId) {
+        List<RentedUnit> rentedUnits = rentedUnitService.getByRenterId(renterId);
+        List<Room> rooms = rentedUnits.stream()
+                .map(RentedUnit::getRoom)
+                .filter(room -> room.getStatus().equalsIgnoreCase("unavailable")
+                        || room.getStatus().equalsIgnoreCase("rented"))
+                .toList();
+        return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 }

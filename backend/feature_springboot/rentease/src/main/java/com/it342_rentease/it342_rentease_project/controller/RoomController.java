@@ -3,6 +3,8 @@ package com.it342_rentease.it342_rentease_project.controller;
 import com.it342_rentease.it342_rentease_project.model.Room;
 import com.it342_rentease.it342_rentease_project.repository.RoomRepository;
 import com.it342_rentease.it342_rentease_project.service.RoomService;
+import com.nimbusds.jose.util.Resource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.http.HttpHeaders;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,18 +74,18 @@ public class RoomController {
     }
 
     @GetMapping("/owner/{ownerId}/unavailable")
-public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long ownerId) {
-    try {
-        System.out.println("Received GET request for unavailable rooms for owner ID: " + ownerId);
-        List<Room> rooms = roomService.getUnavailableRoomsByOwnerId(ownerId);
-        System.out.println("Returning " + rooms.size() + " unavailable rooms");
-        return ResponseEntity.ok(rooms);
-    } catch (Exception e) {
-        System.err.println("Error fetching unavailable rooms for owner ID " + ownerId + ": " + e.getMessage());
-        e.printStackTrace();
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long ownerId) {
+        try {
+            System.out.println("Received GET request for unavailable rooms for owner ID: " + ownerId);
+            List<Room> rooms = roomService.getUnavailableRoomsByOwnerId(ownerId);
+            System.out.println("Returning " + rooms.size() + " unavailable rooms");
+            return ResponseEntity.ok(rooms);
+        } catch (Exception e) {
+            System.err.println("Error fetching unavailable rooms for owner ID " + ownerId + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-}
 
     @GetMapping("/{roomId}")
     public ResponseEntity<Room> getRoomById(@PathVariable("roomId") Long roomId) {
@@ -177,22 +180,45 @@ public ResponseEntity<List<Room>> getUnavailableRoomsByOwner(@PathVariable Long 
 
     // to display in the dashboard
     @GetMapping("/owner/{ownerId}/room-stats")
-public ResponseEntity<Map<String, Long>> getRoomStatsByOwner(@PathVariable Long ownerId) {
-    try {
-        long total = roomRepository.countByOwnerOwnerId(ownerId);
-        long available = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "available");
-        long rented = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "rented");
+    public ResponseEntity<Map<String, Long>> getRoomStatsByOwner(@PathVariable Long ownerId) {
+        try {
+            long total = roomRepository.countByOwnerOwnerId(ownerId);
+            long available = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "available");
+            long rented = roomRepository.countByOwnerOwnerIdAndStatus(ownerId, "rented");
 
-        Map<String, Long> stats = new HashMap<>();
-        stats.put("total", total);
-        stats.put("available", available);
-        stats.put("rented", rented);
+            Map<String, Long> stats = new HashMap<>();
+            stats.put("total", total);
+            stats.put("available", available);
+            stats.put("rented", rented);
 
-        return ResponseEntity.ok(stats);
-    } catch (Exception e) {
-        e.printStackTrace();
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-}
+
+    @PatchMapping("/{roomId}/status")
+    public ResponseEntity<?> updateRoomStatus(
+            @PathVariable Long roomId,
+            @RequestBody Map<String, String> requestBody) {
+        try {
+            String newStatus = requestBody.get("status");
+            Optional<Room> optionalRoom = roomRepository.findById(roomId);
+
+            if (optionalRoom.isEmpty()) {
+                return new ResponseEntity<>("Room not found", HttpStatus.NOT_FOUND);
+            }
+
+            Room room = optionalRoom.get();
+            room.setStatus(newStatus);
+            roomRepository.save(room);
+
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to update room status: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }
