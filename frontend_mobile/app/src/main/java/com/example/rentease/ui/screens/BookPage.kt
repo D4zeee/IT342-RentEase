@@ -46,6 +46,7 @@
     import kotlinx.coroutines.launch
     import com.example.rentease.model.RentedUnitRequest
     import com.example.rentease.model.SimpleId
+    import kotlinx.coroutines.withContext
 
 
     @SuppressLint("UnrememberedMutableState")
@@ -81,6 +82,7 @@
         var showDateDialog by remember { mutableStateOf(false) }
         var startDate by remember { mutableStateOf("") }
         var endDate by remember { mutableStateOf("") }
+        var showStopRentingDialog by remember { mutableStateOf(false) }
 
         val imageUrl by derivedStateOf {
             room?.imagePaths?.getOrNull(currentImageIndex)
@@ -315,31 +317,59 @@
                                                 endDate = formattedEnd
                                             )
 
+                                            android.util.Log.d("BookPage", "Attempting to book room with request: $bookingRequest")
                                             val response = RetrofitInstance.api.bookRoom("Bearer $token", bookingRequest)
 
                                             if (response.isSuccessful) {
                                                 val body = response.body()
+                                                android.util.Log.d("BookPage", "Booking response: $body")
+                                                
                                                 val checkoutUrl = body?.get("checkoutUrl") as? String
-                                                val rentedRoomId = body?.get("roomId").toString()
+                                                val rentedRoomId = body?.get("roomId")?.toString()
+                                                val rentedUnit = body?.get("rentedUnit") as? Map<*, *>
 
-                                                Toast.makeText(context, "Booking successful!", Toast.LENGTH_SHORT).show()
+                                                // Format dates for navigation
+                                                val formattedStart = selectedStartDate?.let { dateFormatter.format(java.util.Date(it)) } ?: ""
+                                                val formattedEnd = selectedEndDate?.let { dateFormatter.format(java.util.Date(it)) } ?: ""
 
-                                                // Update room status
-                                                val statusUpdate = RetrofitInstance.api.updateRoomStatus(
-                                                    roomId = room?.roomId ?: return@launch,
-                                                    status = mapOf("status" to "unavailable"),
-                                                    authHeader = "Bearer $token"
-                                                )
+                                                // Close dialog and navigate immediately
+                                                showDateDialog = false
+                                                android.util.Log.d("BookPage", "About to navigate to book_success/${room?.roomId}/$formattedStart/$formattedEnd")
+                                                
+                                                // Ensure navigation happens on the main thread
+                                                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                                    try {
+                                                        navController.popBackStack()
+                                                        navController.navigate("book_success/${room?.roomId ?: ""}/$formattedStart/$formattedEnd") {
+                                                            launchSingleTop = true
+                                                        }
+                                                        android.util.Log.d("BookPage", "Navigation completed successfully")
+                                                    } catch (e: Exception) {
+                                                        android.util.Log.e("BookPage", "Navigation failed: ${e.message}")
+                                                        Toast.makeText(context, "Failed to navigate to success page", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
 
-                                                // Navigate to payment or success page
-                                                if (!checkoutUrl.isNullOrEmpty()) {
-                                                    val encodedUrl = java.net.URLEncoder.encode(checkoutUrl, "UTF-8")
-                                                    navController.navigate("payment_webview?url=$encodedUrl")
-                                                } else {
-                                                    navController.navigate("book_success/$rentedRoomId/$formattedStart/$formattedEnd")
+                                                // Update room status in the background
+                                                try {
+                                                    val statusUpdate = RetrofitInstance.api.updateRoomStatus(
+                                                        roomId = room?.roomId ?: return@launch,
+                                                        status = mapOf("status" to "unavailable"),
+                                                        authHeader = "Bearer $token"
+                                                    )
+                                                    if (statusUpdate.isSuccessful) {
+                                                        room = room?.copy(status = "unavailable")
+                                                        android.util.Log.d("BookPage", "Room status updated successfully")
+                                                    } else {
+                                                        android.util.Log.e("BookPage", "Failed to update room status: ${statusUpdate.code()}")
+                                                    }
+                                                } catch (e: Exception) {
+                                                    android.util.Log.e("BookPage", "Failed to update room status: ${e.message}")
                                                 }
                                             } else {
-                                                Toast.makeText(context, "Booking failed: ${response.code()}", Toast.LENGTH_SHORT).show()
+                                                val errorBody = response.errorBody()?.string()
+                                                android.util.Log.e("BookPage", "Booking failed: ${response.code()}, Error: $errorBody")
+                                                Toast.makeText(context, "Booking failed: ${response.code()} - ${errorBody ?: "Unknown error"}", Toast.LENGTH_SHORT).show()
                                             }
                                         } catch (e: Exception) {
                                             Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
@@ -563,7 +593,7 @@
                                     // Enhanced stop renting button
                                     Button(
                                         onClick = {
-                                            // TODO: Implement stop renting logic
+                                            showStopRentingDialog = true
                                         },
                                         shape = RoundedCornerShape(16.dp),
                                         colors = ButtonDefaults.buttonColors(
@@ -600,6 +630,48 @@
                                                 letterSpacing = 0.5.sp
                                             )
                                         }
+                                    }
+                                    // Stop Renting Modal
+                                    if (showStopRentingDialog) {
+                                        AlertDialog(
+                                            onDismissRequest = { showStopRentingDialog = false },
+                                            title = { Text("Stop Renting") },
+                                            text = { Text("Make sure to settle account first before stop renting.") },
+                                            confirmButton = {
+                                                Button(onClick = {
+                                                    scope.launch {
+                                                        try {
+                                                            val response = RetrofitInstance.api.updateRoomStatus(
+                                                                roomId = room?.roomId ?: return@launch,
+                                                                status = mapOf("status" to "available"),
+                                                                authHeader = "Bearer $token"
+                                                            )
+                                                            if (response.isSuccessful) {
+                                                                room = room?.copy(status = "available")
+                                                                Toast.makeText(context, "Room is now available.", Toast.LENGTH_SHORT).show()
+                                                                // Navigate to StopRentingSuccessPage
+                                                                val endDate = java.time.LocalDate.now().toString()
+                                                                navController.popBackStack()
+                                                                navController.navigate("stop_renting_success/${room?.roomId ?: ""}/$endDate")
+                                                            } else {
+                                                                Toast.makeText(context, "Failed to update room status.", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        } catch (e: Exception) {
+                                                            Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                                        } finally {
+                                                            showStopRentingDialog = false
+                                                        }
+                                                    }
+                                                }) {
+                                                    Text("Confirm")
+                                                }
+                                            },
+                                            dismissButton = {
+                                                OutlinedButton(onClick = { showStopRentingDialog = false }) {
+                                                    Text("Cancel")
+                                                }
+                                            }
+                                        )
                                     }
                                 }
 

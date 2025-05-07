@@ -69,6 +69,15 @@ fun LoginPage(
                             putString("renterToken", it)
                         }
 
+                        // Fetch current user to get renterId
+                        val userResponse = RetrofitInstance.api.getCurrentUser("Bearer $it")
+                        if (userResponse.isSuccessful) {
+                            val userData = userResponse.body()
+                            val renterId = (userData?.get("renterId") as? Number)?.toLong() ?: -1L
+                            prefs.edit {
+                                putLong("renterId", renterId)
+                            }
+                        }
 
                         withContext(Dispatchers.Main) {
                             isLoading = false

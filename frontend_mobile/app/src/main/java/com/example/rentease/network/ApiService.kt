@@ -3,6 +3,8 @@ package com.example.rentease.network
 import com.example.rentease.model.Room
 import com.example.rentease.model.RentedUnit
 import com.example.rentease.model.RentedUnitRequest
+import com.example.rentease.model.RentedUnitNotificationDTO
+import com.example.rentease.model.PaymentReminderDto
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -48,7 +50,7 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<List<Room>>
 
-    @PUT("rooms/{roomId}/status")
+    @PATCH("rooms/{roomId}/status")
     suspend fun updateRoomStatus(
         @Path("roomId") roomId: Long,
         @Body status: Map<String, String>,
@@ -68,4 +70,27 @@ interface ApiService {
         @Body request: RentedUnitRequest
     ): Response<Map<String, Any>> // ✅ Fix
 
+    @GET("/rented_units/renter/{renterId}")
+    suspend fun getRentedUnitsByRenter(
+        @Header("Authorization") token: String,
+        @Path("renterId") renterId: Long
+    ): Response<List<RentedUnit>>
+
+    @GET("/rented_units/renter/{renterId}/notifications")
+    suspend fun getRentedUnitNotificationsByRenter(
+        @Header("Authorization") token: String,
+        @Path("renterId") renterId: Long
+    ): Response<List<RentedUnitNotificationDTO>>
+
+    @GET("rented_units/renter/{renterId}/rooms")
+    suspend fun getBookedOrRentedRoomsForRenter(
+        @Header("Authorization") token: String,
+        @Path("renterId") renterId: Long
+    ): Response<List<Room>>
+
+    @GET("/payment_reminders/renter/{renterId}")
+    suspend fun getRemindersByRenter(
+        @Header("Authorization") token: String,
+        @Path("renterId") renterId: Long
+    ): Response<List<PaymentReminderDto>>
 }

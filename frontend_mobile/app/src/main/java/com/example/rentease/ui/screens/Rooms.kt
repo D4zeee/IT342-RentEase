@@ -112,8 +112,9 @@ fun RoomsPage(
                     val allRooms = allRoomsResponse.body() ?: emptyList()
                     val myRooms = myRoomsResponse.body() ?: emptyList()
 
-                    // Combine: all available rooms + only booked/rented rooms of the current user
-                    roomList = allRooms.filter { it.status.equals("available", ignoreCase = true) } + myRooms
+                    // Combine: all available rooms + only booked/rented rooms of the current user, remove duplicates by roomId
+                    roomList = (allRooms.filter { it.status.equals("available", ignoreCase = true) } + myRooms)
+                        .distinctBy { it.roomId }
                 } else {
                     hasError = true
                     errorMessage = "Error fetching rooms: ${allRoomsResponse.code()} / ${myRoomsResponse.code()}"

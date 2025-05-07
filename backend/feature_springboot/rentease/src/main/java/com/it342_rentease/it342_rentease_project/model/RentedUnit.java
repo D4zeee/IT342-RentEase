@@ -63,4 +63,8 @@ public class RentedUnit {
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
+
+    public Long getRoomId() {
+        return room != null ? room.getRoomId() : null;
+    }
 }

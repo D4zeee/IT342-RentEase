@@ -37,7 +37,8 @@ fun HelpAndSupportPage(
     onHomeClick: () -> Unit = {},
     onRoomsClick: () -> Unit = {},
     onPaymentClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onPaymentHistoryClick: () -> Unit = {}
 ) {
     // Color scheme
     val tealColor = Color(0xFF147B93)
@@ -119,8 +120,8 @@ fun HelpAndSupportPage(
                         IconButton(onClick = onPaymentClick) {
                             Icon(Icons.Default.CreditCard, contentDescription = "Payment", tint = Color.White)
                         }
-                        IconButton(onClick = onProfileClick) {
-                            Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color.White)
+                        IconButton(onClick = onPaymentHistoryClick) {
+                            Icon(Icons.Default.Receipt, contentDescription = "Payment History", tint = Color.White)
                         }
                     }
                 }

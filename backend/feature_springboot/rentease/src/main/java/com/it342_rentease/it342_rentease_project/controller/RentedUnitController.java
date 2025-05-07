@@ -8,6 +8,9 @@ import com.it342_rentease.it342_rentease_project.service.RentedUnitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate; // Add this at the top if not already imported
+import com.it342_rentease.it342_rentease_project.repository.PaymentReminderRepository;
+import com.it342_rentease.it342_rentease_project.model.PaymentReminder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +30,9 @@ public class RentedUnitController {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private PaymentReminderRepository paymentReminderRepository;
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody RentedUnit unit) {
@@ -66,7 +72,8 @@ public class RentedUnitController {
 
     @GetMapping("/renter/{renterId}")
     public ResponseEntity<List<RentedUnit>> getByRenter(@PathVariable Long renterId) {
-        return new ResponseEntity<>(rentedUnitService.getByRenterId(renterId), HttpStatus.OK);
+        List<RentedUnit> rentedUnits = rentedUnitService.getByRenterId(renterId);
+        return new ResponseEntity<>(rentedUnits, HttpStatus.OK);
     }
 
     @GetMapping("/room/{roomId}")
@@ -114,7 +121,62 @@ public class RentedUnitController {
                 .map(RentedUnit::getRoom)
                 .filter(room -> room.getStatus().equalsIgnoreCase("unavailable")
                         || room.getStatus().equalsIgnoreCase("rented"))
-                .toList();
+                .collect(java.util.stream.Collectors.toMap(
+                    Room::getRoomId, // key: roomId
+                    java.util.function.Function.identity(), // value: Room
+                    (a, b) -> a // merge function: keep first
+                ))
+                .values().stream().toList();
         return new ResponseEntity<>(rooms, HttpStatus.OK);
+    }
+
+    @GetMapping("/renter/{renterId}/notifications")
+    public ResponseEntity<List<RentedUnitNotificationDTO>> getRentedUnitNotificationsByRenter(@PathVariable Long renterId) {
+        List<PaymentReminder> reminders = paymentReminderRepository.findByRenterRenterId(renterId);
+        List<RentedUnitNotificationDTO> notifications = new java.util.ArrayList<>();
+        for (PaymentReminder reminder : reminders) {
+            try {
+                Room room = reminder.getRoom();
+                Long roomId = (room != null) ? room.getRoomId() : null;
+                String unitName = (room != null) ? room.getUnitName() : null;
+                String note = reminder.getNote();
+                String approvalStatus = reminder.getApprovalStatus();
+                String startDate = (reminder.getDueDate() != null) ? reminder.getDueDate().toString() : null;
+
+                // Log each notification for debugging
+                System.out.println("Notification: roomId=" + roomId + ", unitName=" + unitName + ", note=" + note + ", approvalStatus=" + approvalStatus + ", startDate=" + startDate);
+
+                notifications.add(new RentedUnitNotificationDTO(
+                    roomId,
+                    unitName,
+                    note,
+                    approvalStatus,
+                    startDate
+                ));
+            } catch (Exception e) {
+                // Log the error and skip this reminder
+                System.err.println("Error mapping PaymentReminder to DTO: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        return new ResponseEntity<>(notifications, HttpStatus.OK);
+    }
+
+    // DTO for notification
+    class RentedUnitNotificationDTO {
+        public Long room_id;
+        public String unitname;
+        public String note;
+        public String approval_status;
+        public String startDate;
+
+        public RentedUnitNotificationDTO(Long room_id, String unitname, String note, String approval_status,
+                String startDate) {
+            this.room_id = room_id;
+            this.unitname = unitname;
+            this.note = note;
+            this.approval_status = approval_status;
+            this.startDate = startDate;
+        }
     }
 }

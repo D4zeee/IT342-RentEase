@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.rentease.network.RetrofitInstance
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,19 +45,113 @@ fun RemindersPage(
     val darkBlueColor = Color(0xFF0A3F52)
 
     // State variables
+    var notificationsList by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var searchText by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
-    var isLoading by remember { mutableStateOf(false) }
-
-    // Tab selection state
     var selectedTab by remember { mutableStateOf(initialTab) }
+    var remindersList by remember { mutableStateOf<List<ReminderItem>>(emptyList()) }
 
-    // Get appropriate data based on selected tab
-    val itemsList = remember(selectedTab) {
+    // Fetch notifications when Notifications tab is selected
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == "Notifications") {
+            isLoading = true
+            val sharedPreferences = context.getSharedPreferences("RentEasePrefs", android.content.Context.MODE_PRIVATE)
+            val token = sharedPreferences.getString("renterToken", null)
+            if (!token.isNullOrEmpty()) {
+                val authHeader = "Bearer $token"
+                try {
+                    val userResponse = RetrofitInstance.api.getCurrentUser(authHeader)
+                    val userMap = userResponse.body()
+                    val renterId = (userMap?.get("renterId") as? Double)?.toLong()
+                    if (renterId != null) {
+                        val response = RetrofitInstance.api.getRentedUnitNotificationsByRenter(authHeader, renterId)
+                        if (response.isSuccessful) {
+                            android.util.Log.d("RemindersPage", "Fetched notifications: ${response.body()}")
+                            notificationsList = response.body()?.map { dto ->
+                                NotificationItem(
+                                    id = dto.room_id.toString(),
+                                    title = "Room #${dto.room_id} - ${dto.unitname}",
+                                    description = dto.note,
+                                    date = formatDate(dto.startDate.toString()),
+                                    type = "Approval",
+                                    approval_status = dto.approval_status,
+                                    unitname = dto.unitname,
+                                    note = dto.note
+                                )
+                            } ?: emptyList()
+                        } else {
+                            android.util.Log.e("RemindersPage", "Failed to fetch notifications: ${response.code()} ${response.message()}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("RemindersPage", "Error fetching notifications", e)
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    // Fetch reminders when Reminders tab is selected
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == "Reminders") {
+            isLoading = true
+            val sharedPreferences = context.getSharedPreferences("RentEasePrefs", android.content.Context.MODE_PRIVATE)
+            val token = sharedPreferences.getString("renterToken", null)
+            if (!token.isNullOrEmpty()) {
+                val authHeader = "Bearer $token"
+                try {
+                    val userResponse = RetrofitInstance.api.getCurrentUser(authHeader)
+                    val userMap = userResponse.body()
+                    val renterId = (userMap?.get("renterId") as? Double)?.toLong()
+                    if (renterId != null) {
+                        val response = RetrofitInstance.api.getRemindersByRenter(authHeader, renterId)
+                        if (response.isSuccessful) {
+                            remindersList = response.body()?.map { dto: com.example.rentease.model.PaymentReminderDto ->
+                                ReminderItem(
+                                    room_id = dto.room.roomId ?: 0L,
+                                    unit_name = dto.room.unitName ?: "",
+                                    due_date = dto.dueDate ?: "",
+                                    note = dto.note ?: ""
+                                )
+                            }?.filter { !it.note.contains("Booking pending approval", ignoreCase = true) }
+                             ?.distinctBy { it.room_id to it.due_date } ?: emptyList()
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Handle error
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    // --- IMPORTANT: Reminders and Notifications are strictly separated ---
+    // remindersList: only owner-created reminders (from /payment_reminders/renter/{renterId})
+    // notificationsList: only booking approval notifications (from /rented_units/renter/{renterId}/notifications)
+    // Never mix these two lists in the UI or logic!
+
+    val itemsList = remember(selectedTab, remindersList, notificationsList, selectedFilter) {
         when (selectedTab) {
-            "Reminders" -> getSampleReminders()
-            "Notifications" -> getSampleApprovals()
+            "Reminders" -> {
+                // Only show reminders, never notifications
+                remindersList
+                    .distinctBy { it.room_id to it.due_date }
+            }
+            "Notifications" -> {
+                // Only show the latest notification for each room_id where note starts with 'Booking pending approval for'
+                notificationsList
+                    .filter { it.note?.startsWith("Booking pending approval for", ignoreCase = true) == true }
+                    .groupBy { it.id }
+                    .map { (_, group) ->
+                        group.maxByOrNull { it.date } ?: group.first()
+                    }
+                    .filter {
+                        selectedFilter == "All" || it.approval_status.equals(selectedFilter, ignoreCase = true)
+                    }
+            }
             else -> emptyList()
         }
     }
@@ -210,37 +305,6 @@ fun RemindersPage(
                     .fillMaxSize()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                // Search bar
-                OutlinedTextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    placeholder = {
-                        Text(
-                            if (selectedTab == "Reminders") "Search reminders..."
-                            else "Search notifications..."
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = tealColor
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp)),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = tealColor,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    ),
-                    singleLine = true
-                )
-
                 // Filter chips - different for each tab
                 Row(
                     modifier = Modifier
@@ -248,40 +312,17 @@ fun RemindersPage(
                         .padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // All Filter
-                    Surface(
-                        onClick = { selectedFilter = "All" },
-                        modifier = Modifier.height(36.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (selectedFilter == "All") darkBlueColor else Color.White,
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (selectedFilter == "All") Color.Transparent else Color.LightGray
-                        )
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "All",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (selectedFilter == "All") Color.White else Color.DarkGray
-                            )
-                        }
-                    }
-
-                    if (selectedTab == "Reminders") {
-                        // Due Filter
+                    if (selectedTab == "Notifications") {
+                        // Only show filter chips for Notifications tab
+                        // All Filter
                         Surface(
-                            onClick = { selectedFilter = "Due" },
+                            onClick = { selectedFilter = "All" },
                             modifier = Modifier.height(36.dp),
                             shape = RoundedCornerShape(8.dp),
-                            color = if (selectedFilter == "Due") tealColor else Color.White,
+                            color = if (selectedFilter == "All") darkBlueColor else Color.White,
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = if (selectedFilter == "Due") Color.Transparent else Color.LightGray
+                                color = if (selectedFilter == "All") Color.Transparent else Color.LightGray
                             )
                         ) {
                             Box(
@@ -289,23 +330,22 @@ fun RemindersPage(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "Due",
+                                    "All",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (selectedFilter == "Due") Color.White else Color.DarkGray
+                                    color = if (selectedFilter == "All") Color.White else Color.DarkGray
                                 )
                             }
                         }
-
-                        // Overdue Filter
+                        // Pending Filter
                         Surface(
-                            onClick = { selectedFilter = "Overdue" },
+                            onClick = { selectedFilter = "pending" },
                             modifier = Modifier.height(36.dp),
                             shape = RoundedCornerShape(8.dp),
-                            color = if (selectedFilter == "Overdue") tealColor else Color.White,
+                            color = if (selectedFilter == "pending") tealColor else Color.White,
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = if (selectedFilter == "Overdue") Color.Transparent else Color.LightGray
+                                color = if (selectedFilter == "pending") Color.Transparent else Color.LightGray
                             )
                         ) {
                             Box(
@@ -313,23 +353,22 @@ fun RemindersPage(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "Overdue",
+                                    "Pending",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (selectedFilter == "Overdue") Color.White else Color.DarkGray
+                                    color = if (selectedFilter == "pending") Color.White else Color.DarkGray
                                 )
                             }
                         }
-                    } else {
-                        // Approve Filter
+                        // Approved Filter
                         Surface(
-                            onClick = { selectedFilter = "Approve" },
+                            onClick = { selectedFilter = "approved" },
                             modifier = Modifier.height(36.dp),
                             shape = RoundedCornerShape(8.dp),
-                            color = if (selectedFilter == "Approve") tealColor else Color.White,
+                            color = if (selectedFilter == "approved") tealColor else Color.White,
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = if (selectedFilter == "Approve") Color.Transparent else Color.LightGray
+                                color = if (selectedFilter == "approved") Color.Transparent else Color.LightGray
                             )
                         ) {
                             Box(
@@ -337,34 +376,10 @@ fun RemindersPage(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "Approve",
+                                    "Approved",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (selectedFilter == "Approve") Color.White else Color.DarkGray
-                                )
-                            }
-                        }
-
-                        // Denied Filter
-                        Surface(
-                            onClick = { selectedFilter = "Denied" },
-                            modifier = Modifier.height(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (selectedFilter == "Denied") tealColor else Color.White,
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = if (selectedFilter == "Denied") Color.Transparent else Color.LightGray
-                            )
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Denied",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (selectedFilter == "Denied") Color.White else Color.DarkGray
+                                    color = if (selectedFilter == "approved") Color.White else Color.DarkGray
                                 )
                             }
                         }
@@ -381,48 +396,49 @@ fun RemindersPage(
                             CircularProgressIndicator(color = tealColor)
                         }
                     }
-                    itemsList.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Outlined.Notifications,
-                                    contentDescription = "No Items",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = if (selectedTab == "Reminders")
-                                        "No reminders available"
-                                    else
-                                        "No notifications available",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color.DarkGray
-                                )
+                    selectedTab == "Reminders" -> {
+                        if (remindersList.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        Icons.Outlined.Notifications,
+                                        contentDescription = "No Items",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "No reminders available",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color.DarkGray
+                                    )
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                items(remindersList) { reminder ->
+                                    ReminderCard(reminder)
+                                }
                             }
                         }
                     }
-                    else -> {
-                        val filteredItems = itemsList.filter { item ->
-                            val matchesSearch = if (searchText.isEmpty()) {
-                                true
-                            } else {
-                                item.title.contains(searchText, ignoreCase = true) ||
-                                        item.description.contains(searchText, ignoreCase = true)
+                    selectedTab == "Notifications" -> {
+                        val filteredItems = notificationsList
+                            .filter { it.note?.startsWith("Booking pending approval for", ignoreCase = true) == true }
+                            .groupBy { it.id }
+                            .map { (_, group) -> group.maxByOrNull { it.date } ?: group.first() }
+                            .filter {
+                                selectedFilter == "All" || it.approval_status.equals(selectedFilter, ignoreCase = true)
                             }
 
-                            val matchesFilter = selectedFilter == "All" ||
-                                    item.status.equals(selectedFilter, ignoreCase = true)
-
-                            matchesSearch && matchesFilter
-                        }
-
                         if (filteredItems.isEmpty()) {
-                            // Show "No items found" message
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -438,17 +454,13 @@ fun RemindersPage(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = if (selectedTab == "Reminders")
-                                            "No reminders found"
-                                        else
-                                            "No notifications found",
+                                        text = "No notifications found",
                                         fontSize = 18.sp,
                                         color = Color.Gray
                                     )
                                 }
                             }
                         } else {
-                            // Show matching items
                             LazyColumn(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 contentPadding = PaddingValues(bottom = 16.dp)
@@ -475,12 +487,14 @@ fun NotificationItem(
 ) {
     val context = LocalContext.current
     val tealColor = Color(0xFF147B93)
+    val orangeColor = Color(0xFFFF9800)  // Orange color for pending status
+    val greenColor = Color(0xFF4CAF50)   // Green color for approved status
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp))
-            .clickable(onClick = onViewClick), // Make the entire card clickable
+            .clickable(onClick = onViewClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -496,10 +510,12 @@ fun NotificationItem(
                     .size(100.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(
-                        color = when(item.status) {
+                        color = when(item.approval_status) {
                             "Due" -> Color(0xFFFF9800).copy(alpha = 0.2f)
                             "Overdue" -> Color(0xFFF44336).copy(alpha = 0.2f)
-                            "Approve" -> Color(0xFF4CAF50).copy(alpha = 0.2f)
+                            "pending" -> orangeColor.copy(alpha = 0.2f)  // Changed to orange for pending
+                            "approved" -> greenColor.copy(alpha = 0.2f)  // Changed to green for approved
+                            "Approve" -> greenColor.copy(alpha = 0.2f)
                             "Denied" -> Color(0xFFF44336).copy(alpha = 0.2f)
                             else -> tealColor.copy(alpha = 0.2f)
                         }
@@ -516,10 +532,12 @@ fun NotificationItem(
                         else -> Icons.Default.Notifications
                     },
                     contentDescription = item.type,
-                    tint = when(item.status) {
+                    tint = when(item.approval_status) {
                         "Due" -> Color(0xFFFF9800)
                         "Overdue" -> Color(0xFFF44336)
-                        "Approve" -> Color(0xFF4CAF50)
+                        "pending" -> orangeColor  // Changed to orange for pending
+                        "approved" -> greenColor  // Changed to green for approved
+                        "Approve" -> greenColor
                         "Denied" -> Color(0xFFF44336)
                         else -> tealColor
                     },
@@ -534,7 +552,7 @@ fun NotificationItem(
                     .padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = item.title,
+                    text = item.unitname ?: "N/A",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
@@ -550,33 +568,42 @@ fun NotificationItem(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(
-                            color = when(item.status) {
+                            color = when(item.approval_status) {
                                 "Due" -> Color(0xFFFF9800)
                                 "Overdue" -> Color(0xFFF44336)
-                                "Approve" -> Color(0xFF4CAF50)
+                                "pending" -> orangeColor  // Changed to orange for pending
+                                "approved" -> greenColor  // Changed to green for approved
+                                "Approve" -> greenColor
                                 "Denied" -> Color(0xFFF44336)
-                                else -> Color(0xFF4CAF50)
+                                else -> greenColor
                             }
                         )
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Icon(
-                        imageVector = when(item.status) {
+                        imageVector = when(item.approval_status) {
                             "Due" -> Icons.Default.Schedule
                             "Overdue" -> Icons.Default.Warning
+                            "pending" -> Icons.Default.Schedule  // Icon for pending
+                            "approved" -> Icons.Default.CheckCircle  // Icon for approved
                             "Approve" -> Icons.Default.CheckCircle
                             "Denied" -> Icons.Default.Cancel
                             else -> Icons.Default.CheckCircle
                         },
-                        contentDescription = item.status,
+                        contentDescription = item.approval_status,
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
 
                     Spacer(modifier = Modifier.width(6.dp))
 
+                    // Capitalize the first letter of the status text
                     Text(
-                        text = item.status,
+                        text = when(item.approval_status) {
+                            "pending" -> "Pending"  // Capitalize for display
+                            "approved" -> "Approved"  // Capitalize for display
+                            else -> item.approval_status
+                        },
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White
@@ -592,8 +619,6 @@ fun NotificationItem(
                     color = tealColor
                 )
             }
-
-            // The "View" button has been removed
         }
     }
 }
@@ -605,97 +630,60 @@ data class NotificationItem(
     val description: String,
     val date: String,
     val type: String,
-    val status: String
+    val approval_status: String,
+    val unitname: String? = null,
+    val note: String? = null
 )
 
-// Sample data function for reminders
-fun getSampleReminders(): List<NotificationItem> {
-    return listOf(
-        NotificationItem(
-            id = "1",
-            title = "Rent Payment Due",
-            description = "Monthly rent payment for Unit 101 is due today",
-            date = "May 1, 2023",
-            type = "Payment",
-            status = "Due"
-        ),
-        NotificationItem(
-            id = "2",
-            title = "Maintenance Check",
-            description = "Scheduled maintenance check for air conditioning unit",
-            date = "May 5, 2023",
-            type = "Maintenance",
-            status = "Due"
-        ),
-        NotificationItem(
-            id = "3",
-            title = "Property Inspection",
-            description = "Annual property inspection by management",
-            date = "May 10, 2023",
-            type = "Inspection",
-            status = "Due"
-        ),
-        NotificationItem(
-            id = "4",
-            title = "Utility Bill Payment",
-            description = "Water and electricity bill payment",
-            date = "April 25, 2023",
-            type = "Payment",
-            status = "Overdue"
-        ),
-        NotificationItem(
-            id = "5",
-            title = "Lease Renewal",
-            description = "Your lease is up for renewal in 30 days",
-            date = "June 1, 2023",
-            type = "Contract",
-            status = "Due"
-        )
-    )
+data class ReminderItem(
+    val room_id: Long,
+    val unit_name: String,
+    val due_date: String,
+    val note: String
+)
+
+// Helper function to format date (yyyy-MM-dd to MMM d, yyyy)
+fun formatDate(dateStr: String?): String {
+    return try {
+        if (dateStr.isNullOrEmpty()) return ""
+        val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val outputFormat = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+        val date = inputFormat.parse(dateStr)
+        if (date != null) outputFormat.format(date) else dateStr
+    } catch (e: Exception) {
+        dateStr ?: ""
+    }
 }
 
-// Sample data function for approval notifications
-fun getSampleApprovals(): List<NotificationItem> {
-    return listOf(
-        NotificationItem(
-            id = "A1",
-            title = "Maintenance Request Approved",
-            description = "Your request for plumbing repair has been approved",
-            date = "May 2, 2023",
-            type = "Approval",
-            status = "Approve"
-        ),
-        NotificationItem(
-            id = "A2",
-            title = "Late Payment Fee Waiver",
-            description = "Your request for late payment fee waiver has been approved",
-            date = "April 28, 2023",
-            type = "Approval",
-            status = "Approve"
-        ),
-        NotificationItem(
-            id = "A3",
-            title = "Pet Request Denied",
-            description = "Your request to keep a pet in your unit has been denied",
-            date = "May 5, 2023",
-            type = "Approval",
-            status = "Denied"
-        ),
-        NotificationItem(
-            id = "A4",
-            title = "Rent Discount Request",
-            description = "Your request for rent discount has been denied",
-            date = "April 20, 2023",
-            type = "Approval",
-            status = "Denied"
-        ),
-        NotificationItem(
-            id = "A5",
-            title = "Lease Extension Approved",
-            description = "Your request to extend your lease has been approved",
-            date = "May 10, 2023",
-            type = "Approval",
-            status = "Approve"
-        )
-    )
+@Composable
+fun ReminderCard(reminder: ReminderItem) {
+    val tealColor = Color(0xFF147B93)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = reminder.unit_name,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Due: ${reminder.due_date}",
+                fontSize = 16.sp,
+                color = tealColor
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = reminder.note,
+                fontSize = 15.sp,
+                color = Color.DarkGray
+            )
+        }
+    }
 }

@@ -161,16 +161,7 @@ fun UserPage(
                             Icon(Icons.Default.CreditCard, contentDescription = "Payment", tint = Color.White)
                         }
                         IconButton(onClick = onPaymentHistoryClick) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.2f))
-                                    .padding(4.dp)
-                            )
+                            Icon(Icons.Default.Receipt, contentDescription = "Payment History", tint = Color.White.copy(alpha = 0.7f))
                         }
                     }
                 }

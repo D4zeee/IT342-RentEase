@@ -79,8 +79,8 @@ fun AppNavigation(navController: NavHostController) {
                 onProfileClick = { navController.navigate("user") },
                 onRoomsClick = { navController.navigate("rooms") },
                 onHomeClick = { /* Optional */ },
-                onPaymentClick = { /* Optional */ },
-                onPaymentHistoryClick = { navController.navigate("payment_history") }, // ✅ Fixed here
+                onPaymentClick = { navController.navigate("payments") },
+                onPaymentHistoryClick = { navController.navigate("payment_history") },
                 onViewAllRoomsClick = { navController.navigate("rooms") }
             )
         }
@@ -91,13 +91,13 @@ fun AppNavigation(navController: NavHostController) {
                 onHomeClick = { navController.navigate("dashboard") },
                 onLogOutClick = { navController.navigate("login") },
                 onRoomsClick = { navController.navigate("rooms") },
-                onPaymentClick = { navController.navigate("reminders") },
+                onPaymentClick = { navController.navigate("payments") },
                 onPaymentHistoryClick = { navController.navigate("payment_history") },
                 onDeleteAccountClick = { /* Optional */ },
                 onBackClick = { navController.navigate("dashboard") },
                 onNotificationsClick = { tab ->
                     when (tab) {
-                        "Notifications" -> navController.navigate("reminders") // Or a dedicated screen later
+                        "Notifications" -> navController.navigate("reminders")
                         "Reminders" -> navController.navigate("reminders")
                     }
                 },
@@ -112,7 +112,7 @@ fun AppNavigation(navController: NavHostController) {
                 onBackClick = { navController.navigate("dashboard") },
                 onHomeClick = { navController.navigate("dashboard") },
                 onRoomsClick = { /* Already on Rooms */ },
-                onPaymentClick = {},
+                onPaymentClick = { navController.navigate("payments") },
                 onPaymentHistoryClick = { navController.navigate("payment_history") }
             )
         }
@@ -122,7 +122,7 @@ fun AppNavigation(navController: NavHostController) {
                 onBackClick = { navController.navigate("dashboard") },
                 onHomeClick = { navController.navigate("dashboard") },
                 onRoomsClick = { navController.navigate("rooms") },
-                onPaymentClick = { /* TODO */ },
+                onPaymentClick = { navController.navigate("payments") },
                 onPaymentHistoryClick = { navController.navigate("payment_history") }
             )
         }
@@ -154,7 +154,7 @@ fun AppNavigation(navController: NavHostController) {
                 onBackClick = { navController.navigate("dashboard") },
                 onHomeClick = { navController.navigate("dashboard") },
                 onRoomsClick = { navController.navigate("rooms") },
-                onPaymentClick = { /* TODO */ },
+                onPaymentClick = { navController.navigate("payments") },
                 onPaymentHistoryClick = { navController.navigate("payment_history") }
             )
         }
@@ -164,7 +164,7 @@ fun AppNavigation(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onHomeClick = { navController.navigate("dashboard") },
                 onRoomsClick = { navController.navigate("rooms") },
-                onPaymentClick = { navController.navigate("reminders") },
+                onPaymentClick = { navController.navigate("payments") },
                 onProfileClick = { navController.navigate("user") }
             )
         }
@@ -174,8 +174,28 @@ fun AppNavigation(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onHomeClick = { navController.navigate("dashboard") },
                 onRoomsClick = { navController.navigate("rooms") },
-                onPaymentClick = { navController.navigate("reminders") },
-                onProfileClick = { navController.navigate("user") }
+                onPaymentClick = { navController.navigate("payments") },
+                onPaymentHistoryClick = { navController.navigate("user") }
+            )
+        }
+
+        composable("payments") {
+            PaymentsPage(
+                onBackClick = { navController.popBackStack() },
+                onHomeClick = { navController.navigate("dashboard") },
+                onRoomsClick = { navController.navigate("rooms") },
+                onPaymentClick = { navController.navigate("payments") },
+                onPaymentHistoryClick = { navController.navigate("payment_history") }
+            )
+        }
+
+        composable("stop_renting_success/{roomId}/{endDate}") { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            val endDate = backStackEntry.arguments?.getString("endDate")
+            StopRentingSuccessPage(
+                navController = navController,
+                roomId = roomId,
+                endDate = endDate
             )
         }
 

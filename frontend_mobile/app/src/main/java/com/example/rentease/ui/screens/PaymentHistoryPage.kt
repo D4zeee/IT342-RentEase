@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,6 +41,12 @@ fun PaymentHistoryPage(
     val tealColor = Color(0xFF147B93)
     val lightTeal = Color(0xFF1A97B5)
     val darkBlueColor = Color(0xFF0A3F52)
+    val context = LocalContext.current
+    // Retrieve token for API calls
+    val sharedPreferences = context.getSharedPreferences("RentEasePrefs", android.content.Context.MODE_PRIVATE)
+    val token = sharedPreferences.getString("renterToken", null)
+    val authHeader = if (!token.isNullOrEmpty()) "Bearer $token" else null
+    // Use 'authHeader' in your API calls below
 
     // State variables
     var searchText by remember { mutableStateOf("") }
