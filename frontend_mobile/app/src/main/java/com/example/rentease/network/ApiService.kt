@@ -5,6 +5,7 @@ import com.example.rentease.model.RentedUnit
 import com.example.rentease.model.RentedUnitRequest
 import com.example.rentease.model.RentedUnitNotificationDTO
 import com.example.rentease.model.PaymentReminderDto
+import com.example.rentease.model.PaymentHistoryRequest
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -93,4 +94,12 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("renterId") renterId: Long
     ): Response<List<PaymentReminderDto>>
+
+    @POST("api/payment-history")
+    suspend fun savePaymentHistory(
+        @Body paymentHistory: PaymentHistoryRequest
+    ): Response<PaymentHistoryRequest>
+
+    @GET("api/payment-history")
+    suspend fun getPaymentHistory(): Response<List<PaymentHistoryRequest>>
 }

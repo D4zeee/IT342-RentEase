@@ -185,7 +185,20 @@ fun AppNavigation(navController: NavHostController) {
                 onHomeClick = { navController.navigate("dashboard") },
                 onRoomsClick = { navController.navigate("rooms") },
                 onPaymentClick = { navController.navigate("payments") },
-                onPaymentHistoryClick = { navController.navigate("payment_history") }
+                onPaymentHistoryClick = { navController.navigate("payment_history") },
+                navController = navController
+            )
+        }
+
+        composable("payment_success/{unitName}/{startDate}/{rentalFee}") { backStackEntry ->
+            val unitName = backStackEntry.arguments?.getString("unitName")
+            val startDate = backStackEntry.arguments?.getString("startDate")
+            val rentalFee = backStackEntry.arguments?.getString("rentalFee")?.toDoubleOrNull()
+            PaymentSuccessPage(
+                navController = navController,
+                unitName = unitName,
+                startDate = startDate,
+                rentalFee = rentalFee
             )
         }
 

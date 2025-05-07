@@ -35,6 +35,8 @@ import kotlinx.coroutines.launch
 import com.example.rentease.network.RetrofitInstance
 import com.example.rentease.model.RentedUnit
 import com.example.rentease.model.Room
+import androidx.navigation.NavController
+import com.example.rentease.model.PaymentHistoryRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +46,8 @@ fun PaymentsPage(
     onRoomsClick: () -> Unit = {},
     onPaymentClick: () -> Unit = {},
     onPaymentHistoryClick: () -> Unit = {},
-    onPayMongoClick: () -> Unit = {}
+    onPayMongoClick: () -> Unit = {},
+    navController: NavController
 ) {
     val tealColor = Color(0xFF147B93)
     val lightTeal = Color(0xFF1A97B5)
@@ -59,6 +62,7 @@ fun PaymentsPage(
     var selectedUnit by remember { mutableStateOf<RentedUnit?>(null) }
     var rentedUnits by remember { mutableStateOf<List<RentedUnit>>(emptyList()) }
     var roomList by remember { mutableStateOf<List<Room>>(emptyList()) }
+    var paidRoomIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -85,7 +89,6 @@ fun PaymentsPage(
                 }
                 val userMap = userResponse.body()
                 val renterId = (userMap?.get("renterId") as? Double)?.toLong()
-                Log.d("PaymentsPage", "Current renterId: $renterId")
                 if (renterId == null) {
                     hasError = true
                     errorMessage = "Invalid user ID"
@@ -95,11 +98,21 @@ fun PaymentsPage(
                 val rentedUnitsResponse = RetrofitInstance.api.getRentedUnitsByRenter("Bearer $token", renterId)
                 // Fetch all rooms to get unitName and rentalFee
                 val roomsResponse = RetrofitInstance.api.getAllRooms("Bearer $token")
-                if (rentedUnitsResponse.isSuccessful && roomsResponse.isSuccessful) {
-                    rentedUnits = rentedUnitsResponse.body() ?: emptyList()
+                // Fetch payment history from backend
+                val paymentHistoryResponse = RetrofitInstance.api.getPaymentHistory()
+                if (rentedUnitsResponse.isSuccessful && roomsResponse.isSuccessful && paymentHistoryResponse.isSuccessful) {
+                    val allRentedUnits = rentedUnitsResponse.body() ?: emptyList()
                     roomList = roomsResponse.body() ?: emptyList()
-                    Log.d("PaymentsPage", "Fetched rentedUnits: $rentedUnits")
-                    Log.d("PaymentsPage", "Fetched roomList: $roomList")
+                    val paymentHistory = paymentHistoryResponse.body() ?: emptyList()
+                    paidRoomIds = paymentHistory.map { it.roomId }.toSet()
+                    // Only show units that are not paid
+                    rentedUnits = allRentedUnits.filter { it.roomId !in paidRoomIds }
+                    
+                    // Add logging
+                    Log.d("PaymentsPage", "All rented units: ${allRentedUnits.size}")
+                    Log.d("PaymentsPage", "Room list: ${roomList.size}")
+                    Log.d("PaymentsPage", "Paid room IDs: $paidRoomIds")
+                    Log.d("PaymentsPage", "Filtered rented units: ${rentedUnits.size}")
                 } else {
                     hasError = true
                     errorMessage = "Failed to fetch rented units or rooms"
@@ -241,31 +254,6 @@ fun PaymentsPage(
                     }
                 }
             }
-        } else if (rentedUnits.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Home,
-                        contentDescription = "No Units",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No rented units found",
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
         } else {
             Column(
                 modifier = Modifier
@@ -278,7 +266,7 @@ fun PaymentsPage(
                 // Add spacer above the Payment Process card
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Payment Process Card
+                // Payment Process Card (always visible)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -296,9 +284,7 @@ fun PaymentsPage(
                             color = darkBlueColor,
                             fontWeight = FontWeight.Bold
                         )
-
                         Spacer(modifier = Modifier.height(16.dp))
-
                         PaymentProcessStep(
                             number = 1,
                             title = "Select Rented Unit",
@@ -306,9 +292,7 @@ fun PaymentsPage(
                             icon = Icons.Default.Home,
                             color = tealColor
                         )
-
                         Spacer(modifier = Modifier.height(12.dp))
-
                         PaymentProcessStep(
                             number = 2,
                             title = "Click Pay with PayMongo",
@@ -316,9 +300,7 @@ fun PaymentsPage(
                             icon = Icons.Default.CreditCard,
                             color = tealColor
                         )
-
                         Spacer(modifier = Modifier.height(12.dp))
-
                         PaymentProcessStep(
                             number = 3,
                             title = "Complete Payment",
@@ -326,9 +308,7 @@ fun PaymentsPage(
                             icon = Icons.Default.CheckCircle,
                             color = tealColor
                         )
-
                         Spacer(modifier = Modifier.height(12.dp))
-
                         PaymentProcessStep(
                             number = 4,
                             title = "Receive Confirmation",
@@ -336,9 +316,7 @@ fun PaymentsPage(
                             icon = Icons.Default.MarkEmailRead,
                             color = tealColor
                         )
-
                         Spacer(modifier = Modifier.height(16.dp))
-
                         // Payment method info
                         Row(
                             modifier = Modifier
@@ -364,7 +342,7 @@ fun PaymentsPage(
                     }
                 }
 
-                // Unit Selection Dropdown
+                // Unit Selection Dropdown (always visible)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -379,37 +357,43 @@ fun PaymentsPage(
                             style = MaterialTheme.typography.titleMedium,
                             color = darkBlueColor
                         )
-
                         Spacer(modifier = Modifier.height(8.dp))
-
                         Box {
                             val uniqueRentedUnits = rentedUnits.distinctBy { it.roomId }
+                            val hasUnits = uniqueRentedUnits.isNotEmpty()
+                            
+                            // Add logging
+                            Log.d("PaymentsPage", "Unique rented units: ${uniqueRentedUnits.size}")
+                            Log.d("PaymentsPage", "Has units: $hasUnits")
+                            
                             OutlinedButton(
-                                onClick = { expanded = true },
-                                modifier = Modifier.fillMaxWidth()
+                                onClick = { if (hasUnits) expanded = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = hasUnits
                             ) {
                                 val selectedRoom = roomList.find { it.roomId == selectedUnit?.roomId }
                                 Text(
-                                    text = selectedRoom?.unitName ?: "Select a unit",
+                                    text = if (hasUnits) (selectedRoom?.unitName ?: "Select a unit") else "No rented rooms yet",
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
-
                             DropdownMenu(
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false },
                                 modifier = Modifier.fillMaxWidth(0.9f)
                             ) {
-                                uniqueRentedUnits.forEach { unit ->
-                                    val room = roomList.find { it.roomId == unit.roomId }
-                                    DropdownMenuItem(
-                                        text = { Text(room?.unitName ?: "N/A") },
-                                        onClick = {
-                                            selectedUnit = unit
-                                            expanded = false
-                                        }
-                                    )
+                                if (hasUnits) {
+                                    uniqueRentedUnits.forEach { unit ->
+                                        val room = roomList.find { it.roomId == unit.roomId }
+                                        DropdownMenuItem(
+                                            text = { Text(room?.unitName ?: "N/A") },
+                                            onClick = {
+                                                selectedUnit = unit
+                                                expanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -441,26 +425,45 @@ fun PaymentsPage(
                             Spacer(modifier = Modifier.height(16.dp))
                             // PayMongo Button
                             Button(
-                                onClick = onPayMongoClick,
+                                onClick = {
+                                    if (selectedUnit != null) {
+                                        val selectedRoom = roomList.find { it.roomId == selectedUnit!!.roomId }
+                                        // Save payment history to backend
+                                        scope.launch {
+                                            val paymentHistory = PaymentHistoryRequest(
+                                                unitName = selectedRoom?.unitName ?: "",
+                                                roomId = selectedRoom?.roomId ?: 0L,
+                                                rentalFee = selectedRoom?.rentalFee ?: 0.0,
+                                                startDate = selectedUnit?.startDate ?: ""
+                                            )
+                                            try {
+                                                val response = RetrofitInstance.api.savePaymentHistory(paymentHistory)
+                                                if (response.isSuccessful) {
+                                                    // Optionally show a success message or update UI
+                                                } else {
+                                                    // Handle error (e.g., show a Toast)
+                                                }
+                                            } catch (e: Exception) {
+                                                // Handle network error
+                                            }
+                                        }
+                                        // Remove the selected unit from the dropdown
+                                        rentedUnits = rentedUnits.filter { it.roomId != selectedUnit!!.roomId }
+                                        // Navigate to PaymentSuccessPage with unit details
+                                        navController.navigate(
+                                            "payment_success/${selectedRoom?.unitName}/${selectedUnit?.startDate}/${selectedRoom?.rentalFee}"
+                                        )
+                                    }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(56.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = tealColor
-                                )
+                                ),
+                                enabled = selectedUnit != null
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Payments,
-                                        contentDescription = "Pay",
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Pay with PayMongo")
-                                }
+                                Text("Pay with PayMongo")
                             }
                         }
                     }
