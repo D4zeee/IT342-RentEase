@@ -1,64 +1,71 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import axios from "axios"
-import Cookies from "js-cookie"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Cookies from "js-cookie";
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   HomeIcon,
   CurrencyDollarIcon,
   CalendarDaysIcon,
-} from "@heroicons/react/24/outline"
+} from "@heroicons/react/24/outline";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({ total: 0, available: 0, rented: 0 })
-  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState({ total: 0, available: 0, rented: 0, revenue: 0 });
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        setIsLoading(true)
-        const token = Cookies.get("token")
+        setIsLoading(true);
+        const token = Cookies.get("token");
         const ownerResponse = await axios.get("http://localhost:8080/owners/current-user", {
           headers: { Authorization: `Bearer ${token}` },
-        })
-        const ownerId = ownerResponse.data.ownerId
+        });
+        const ownerId = ownerResponse.data.ownerId;
 
+        // Fetch room stats
         const statsResponse = await axios.get(`http://localhost:8080/rooms/owner/${ownerId}/room-stats`, {
           headers: { Authorization: `Bearer ${token}` },
-        })
+        });
+        setStats(statsResponse.data);
 
-        setStats(statsResponse.data)
+        // Fetch payment history
+        const paymentResponse = await axios.get("http://localhost:8080/api/payment-history", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setPaymentHistory(paymentResponse.data);
+
+        // Calculate total revenue from payment history
+        const totalRevenue = paymentResponse.data.reduce((sum, payment) => sum + (payment.rentalFee || 0), 0);
+        setStats((prevStats) => ({ ...prevStats, revenue: totalRevenue }));
       } catch (error) {
-        console.error("Failed to fetch dashboard stats", error)
+        console.error("Failed to fetch dashboard data", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchStats()
-  }, [])
+    fetchData();
+  }, []);
 
-  // Mock data for the additional UI elements
+  // Data for UI elements
   const mockData = {
     newBookings: stats.total,
-    revenue: stats.total * 1000,
+    revenue: stats.revenue,
     occupiedRooms: stats.rented,
     availableRooms: stats.available,
-  }
+  };
 
   // Placeholder for monthly occupancy data
-  const monthlyOccupancy = [75, 82, 65, 90, 85, 88, 92, 78, 83, 70, 88, 95]
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const monthlyOccupancy = [75, 82, 65, 90, 85, 88, 92, 78, 83, 70, 88, 95];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Welcome to RentEase</h1>
-          <p className="text-gray-600">Here's a summary of your property management dashboard</p>
-        </div>
 
         {/* Overview Cards */}
         <div className="mb-8">
@@ -123,7 +130,9 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-gray-600 font-medium">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">${mockData.revenue.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-gray-800 mt-2">
+                    ₱{mockData.revenue.toLocaleString()}
+                  </p>
                 </div>
                 <div className="bg-white p-2 rounded-lg shadow-sm">
                   <CurrencyDollarIcon className="h-6 w-6 text-teal-500" />
@@ -160,7 +169,7 @@ const Dashboard = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
