@@ -1,3 +1,5 @@
+"use client"
+
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -15,6 +17,9 @@ function PaymentSuccess() {
   const [description, setDescription] = useState("");
   const [savedPayment, setSavedPayment] = useState(null);
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
   useEffect(() => {
     const fetchPaymentDetails = async () => {
       const token = Cookies.get("renterToken");
@@ -26,7 +31,7 @@ function PaymentSuccess() {
 
       try {
         const response = await axios.get(
-          `http://localhost:8080/payments/intent/${paymentIntentId}`,
+          `${API_BASE_URL}/payments/intent/${paymentIntentId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -57,7 +62,7 @@ function PaymentSuccess() {
       try {
         console.log("Saving payment with:", { paymentIntentId, roomId });
         const saveResponse = await axios.post(
-          "http://localhost:8080/payments/save",
+          `${API_BASE_URL}/payments/save`,
           {
             paymentIntentId,
             roomId,

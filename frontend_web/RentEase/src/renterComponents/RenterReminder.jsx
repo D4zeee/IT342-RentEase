@@ -12,6 +12,9 @@ function RenterReminder() {
   const [renterId, setRenterId] = useState(null)
   const [error, setError] = useState(null)
 
+  // Fallback for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   useEffect(() => {
     const token = Cookies.get("renterToken")
     if (!token) {
@@ -19,9 +22,9 @@ function RenterReminder() {
       setError("Please log in to view reminders.")
       return
     }
-  
+
     axios
-      .get("http://localhost:8080/api/renters/current", {
+      .get(`${API_BASE_URL}/api/renters/current`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -41,29 +44,29 @@ function RenterReminder() {
   }, [])
 
   useEffect(() => {
-    if (!renterId) return;
-    const token = Cookies.get("renterToken");
-  
+    if (!renterId) return
+    const token = Cookies.get("renterToken")
+
     axios
-      .get(`http://localhost:8080/payment_reminders/renter/${renterId}`, {
+      .get(`${API_BASE_URL}/payment_reminders/renter/${renterId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        console.log("Fetched reminders for renterId:", renterId, res.data); // Debug log
+        console.log("Fetched reminders for renterId:", renterId, res.data) // Debug log
         // Filter out system-generated reminders
         const filteredReminders = res.data.filter(
           (r) => !r.note?.includes("Payment is due") && !r.note?.includes("Booking pending approval")
-        );
-        setReminders(filteredReminders);
+        )
+        setReminders(filteredReminders)
       })
       .catch((err) => {
-        console.error("Error loading reminders:", err);
-        setError("Failed to load reminders.");
+        console.error("Error loading reminders:", err)
+        setError("Failed to load reminders.")
       })
       .finally(() => {
-        setLoading(false);
-      });
-  }, [renterId]);
+        setLoading(false)
+      })
+  }, [renterId])
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString(undefined, {
@@ -88,7 +91,7 @@ function RenterReminder() {
           </div>
         ) : reminders.length === 0 ? (
           <div className="text-center mt-20">
-            <BellRing size={48} className="text-cyan-600 ⟟mx-auto mb-4" />
+            <BellRing size={48} className="text-cyan-600 mx-auto mb-4" />
             <Typography variant="h6">No reminders at the moment.</Typography>
           </div>
         ) : (

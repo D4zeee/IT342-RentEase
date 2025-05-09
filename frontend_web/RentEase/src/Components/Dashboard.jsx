@@ -34,14 +34,13 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const token = Cookies.get("token");
+        setIsLoading(true)
+        const token = Cookies.get("token")
         const ownerResponse = await axios.get("http://localhost:8080/owners/current-user", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const ownerId = ownerResponse.data.ownerId;
 
-        // Fetch room stats
         const statsResponse = await axios.get(`http://localhost:8080/rooms/owner/${ownerId}/room-stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -74,6 +73,7 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  // Data for UI elements
   // Data for UI elements
   const mockData = {
     newBookings: stats.total,
