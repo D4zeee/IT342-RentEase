@@ -1,17 +1,31 @@
-# Ignore Gradle build and cache files
+# Gradle files
 .gradle/
 **/.gradle/
 *.lock
 *.bin
 *.log
 
-# Ignore IntelliJ/VS Code project settings (optional)
-.idea/
-.vscode/
-
-# Ignore environment variables
-.env
-
-# Ignore build folders
+# Build output
 /build/
 **/build/
+.externalNativeBuild/
+.cxx/
+captures/
+
+# IntelliJ & VS Code settings
+.idea/
+.vscode/
+*.iml
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+
+# Environment config
+.env
+local.properties
+
+# macOS system file
+.DS_Store

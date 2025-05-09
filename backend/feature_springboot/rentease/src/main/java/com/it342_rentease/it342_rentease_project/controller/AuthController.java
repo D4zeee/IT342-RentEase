@@ -94,6 +94,28 @@ public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String a
         ownerRepository.deleteById(ownerId); // This will also delete rooms because of cascade
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/update-profile")
+public ResponseEntity<?> updateProfile(@RequestHeader("Authorization") String authHeader, @RequestBody Map<String, String> updates) {
+    String token = authHeader.replace("Bearer ", "");
+    String username = jwtUtils.extractUsername(token);
+    Owner owner = ownerRepository.findByUsername(username).orElse(null);
+
+    if (owner == null) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Owner not found");
+    }
+
+    updates.forEach((key, value) -> {
+        switch (key) {
+            case "username": owner.setUsername(value); break;
+            case "password": owner.setPassword(passwordEncoder.encode(value)); break;
+        }
+    });
+
+    ownerRepository.save(owner);
+    return ResponseEntity.ok("Profile updated");
+}
+
     
 
 }
