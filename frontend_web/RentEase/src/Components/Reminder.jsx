@@ -1,28 +1,30 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Typography, Button, Input, Textarea, Select, Option } from "@material-tailwind/react";
-import { BellRing, Plus, Calendar, Home, X, AlertCircle } from "lucide-react";
-import axios from "axios";
-import Cookies from "js-cookie";
+import { useState, useEffect } from "react"
+import { BellRing, Plus, Calendar, Home, AlertCircle, Clock, User } from 'lucide-react'
+import axios from "axios"
+import Cookies from "js-cookie"
+
+// Since we're not using the shadcn/ui components, let's revert to using the Material Tailwind components
+import { Typography, Button, Input, Textarea, Select, Option } from "@material-tailwind/react"
 
 function Reminder() {
-  const [showModal, setShowModal] = useState(false);
-  const [room, setRoom] = useState("");
-  const [date, setDate] = useState("");
-  const [note, setNote] = useState("");
-  const [errors, setErrors] = useState({});
-  const [rooms, setRooms] = useState([]);
-  const [reminders, setReminders] = useState([]);
-  const [ownerId, setOwnerId] = useState(null);
-  const [selectedRenterId, setSelectedRenterId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false)
+  const [room, setRoom] = useState("")
+  const [date, setDate] = useState("")
+  const [note, setNote] = useState("")
+  const [errors, setErrors] = useState({})
+  const [rooms, setRooms] = useState([])
+  const [reminders, setReminders] = useState([])
+  const [ownerId, setOwnerId] = useState(null)
+  const [selectedRenterId, setSelectedRenterId] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = Cookies.get("token"); // Owner token
+    const token = Cookies.get("token")
     if (!token) {
-      setLoading(false);
-      return;
+      setLoading(false)
+      return
     }
 
     axios
@@ -30,36 +32,35 @@ function Reminder() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setOwnerId(res.data.ownerId);
+        setOwnerId(res.data.ownerId)
       })
       .catch((err) => {
-        console.error("Error fetching current owner:", err);
+        console.error("Error fetching current owner:", err)
       })
       .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+        setLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
-    if (!ownerId) return;
-    const token = Cookies.get("token");
+    if (!ownerId) return
+    const token = Cookies.get("token")
 
     axios
       .get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setRooms(res.data);
-        console.log("Fetched unavailable rooms:", res.data);
+        setRooms(res.data)
       })
       .catch((err) => {
-        console.error("Failed to fetch unavailable rooms", err);
-      });
-  }, [ownerId]);
+        console.error("Failed to fetch unavailable rooms", err)
+      })
+  }, [ownerId])
 
   useEffect(() => {
-    if (!ownerId) return;
-    const token = Cookies.get("token");
+    if (!ownerId) return
+    const token = Cookies.get("token")
 
     axios
       .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
@@ -67,45 +68,45 @@ function Reminder() {
       })
       .then((res) => {
         const manualReminders = res.data.filter(
-          (r) => !r.note?.includes("Booking pending approval") && !r.note?.includes("Payment is due")
-        );
-        setReminders(manualReminders);
+          (r) => !r.note?.includes("Booking pending approval") && !r.note?.includes("Payment is due"),
+        )
+        setReminders(manualReminders)
       })
-      .catch((err) => console.error("Failed to fetch reminders", err));
-  }, [ownerId]);
+      .catch((err) => console.error("Failed to fetch reminders", err))
+  }, [ownerId])
 
   const handleAddClick = () => {
-    setShowModal(true);
-    setRoom("");
-    setDate("");
-    setNote("");
-    setSelectedRenterId(null);
-    setErrors({});
-  };
+    setShowModal(true)
+    setRoom("")
+    setDate("")
+    setNote("")
+    setSelectedRenterId(null)
+    setErrors({})
+  }
 
   const handleModalClose = (e) => {
     if (e.target === e.currentTarget) {
-      setShowModal(false);
-      setErrors({});
+      setShowModal(false)
+      setErrors({})
     }
-  };
+  }
 
   const validateForm = () => {
-    const newErrors = {};
-    if (!room) newErrors.room = "Room is required";
-    if (!date) newErrors.date = "Date is required";
-    if (!selectedRenterId) newErrors.room = "Selected room has no associated renter";
-    return newErrors;
-  };
+    const newErrors = {}
+    if (!room) newErrors.room = "Room is required"
+    if (!date) newErrors.date = "Date is required"
+    if (!selectedRenterId) newErrors.room = "Selected room has no associated renter"
+    return newErrors
+  }
 
   const handleDone = () => {
-    const formErrors = validateForm();
+    const formErrors = validateForm()
     if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return;
+      setErrors(formErrors)
+      return
     }
 
-    const selectedRoom = rooms.find((r) => r.roomId.toString() === room);
+    const selectedRoom = rooms.find((r) => r.roomId.toString() === room)
     const payload = {
       room: { roomId: parseInt(room) },
       renter: { renterId: selectedRenterId },
@@ -113,51 +114,57 @@ function Reminder() {
       dueDate: date,
       note: note,
       rentalFee: selectedRoom?.rentalFee || 0.0,
-    };
+    }
 
     axios
       .post("http://localhost:8080/payment_reminders", payload)
       .then((res) => {
-        setReminders((prev) => [...prev, res.data]);
-        setShowModal(false);
-        setRoom("");
-        setDate("");
-        setNote("");
-        setSelectedRenterId(null);
-        setErrors({});
+        setReminders((prev) => [...prev, res.data])
+        setShowModal(false)
+        setRoom("")
+        setDate("")
+        setNote("")
+        setSelectedRenterId(null)
+        setErrors({})
       })
       .catch((err) => {
-        console.error("Error creating reminder:", err);
-        alert("Failed to create reminder");
-      });
-  };
+        console.error("Error creating reminder:", err)
+        alert("Failed to create reminder")
+      })
+  }
 
   const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
+    const options = { year: "numeric", month: "long", day: "numeric" }
+    return new Date(dateString).toLocaleDateString(undefined, options)
+  }
+
+  const getRenterName = (reminder) => {
+    return reminder.renter?.firstName && reminder.renter?.lastName
+      ? `${reminder.renter.firstName} ${reminder.renter.lastName}`
+      : "No renter assigned"
+  }
 
   return (
-    <div className="relative min-h-[calc(100vh-60px)] bg-gradient-to-b from-cyan-50 to-white flex flex-col justify-center items-center p-6">
-      <div className="w-full max-w-3xl">
+    <div className="relative min-h-[calc(100vh-60px)] bg-gradient-to-b from-sky-50 to-white flex flex-col items-center justify-start p-6">
+      <div className="w-full max-w-4xl">
 
         {loading && (
           <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-600"></div>
           </div>
         )}
 
         {!loading && reminders.length === 0 ? (
-          <div className="text-center bg-white rounded-xl shadow-sm border border-gray-100 p-10 transition-all duration-300 hover:shadow-md">
+          <div className="text-center bg-white rounded-xl shadow-lg border border-gray-100 p-10 transition-all duration-300 hover:shadow-xl">
             <div className="flex justify-center mb-6">
-              <div className="p-6 bg-cyan-50 rounded-full">
-                <BellRing size={64} className="text-cyan-600" />
+              <div className="p-6 bg-sky-50 rounded-full">
+                <BellRing size={64} className="text-sky-600" />
               </div>
             </div>
-            <Typography variant="h5" color="blue-gray" className="mb-3 font-semibold">
+            <Typography variant="h5" className="font-semibold text-gray-800 mb-3">
               No Reminders
             </Typography>
-            <Typography color="gray" className="max-w-xs mx-auto">
+            <Typography variant="paragraph" className="text-gray-600 max-w-xs mx-auto">
               You don't have any reminders set. Click the button below to add a new reminder.
             </Typography>
           </div>
@@ -168,28 +175,47 @@ function Reminder() {
               .map((reminder) => (
                 <div
                   key={reminder.reminderId}
-                  className="p-6 border rounded-xl shadow-sm bg-white hover:shadow-md transition-all duration-300"
+                  className="p-6 border rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-300"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-cyan-50 rounded-lg">
-                        <Home size={24} className="text-cyan-600" />
+                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-sky-50 rounded-xl shrink-0">
+                        <Home size={24} className="text-sky-600" />
                       </div>
-                      <Typography variant="h6" className="text-gray-800 font-semibold">
-                        Room #{reminder.room.roomId}
-                        {reminder.room.unitName && (
-                          <span className="text-sm font-normal text-gray-500 ml-2">{reminder.room.unitName}</span>
+                      <div>
+                        <Typography variant="h6" className="font-semibold text-gray-800">
+                          Room #{reminder.room.roomId}
+                          {reminder.room.unitName && (
+                            <span className="text-sm font-normal text-gray-500 ml-2">{reminder.room.unitName}</span>
+                          )}
+                        </Typography>
+                        <div className="flex items-center gap-1 text-gray-500 text-sm mt-1">
+                          <User size={14} />
+                          <Typography variant="small">{getRenterName(reminder)}</Typography>
+                        </div>
+                        {reminder.note && (
+                          <Typography variant="small" className="text-gray-600 mt-3">
+                            {reminder.note}
+                          </Typography>
                         )}
-                      </Typography>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    <div className="flex items-center gap-3 md:self-start">
                       <div className="p-2 bg-amber-50 rounded-lg">
                         <Calendar size={20} className="text-amber-600" />
                       </div>
-                      <Typography className="text-gray-700 font-medium">{formatDate(reminder.dueDate)}</Typography>
+                      <div>
+                        <Typography variant="paragraph" className="font-medium text-gray-700">
+                          {formatDate(reminder.dueDate)}
+                        </Typography>
+                        <Typography variant="small" className="text-gray-500 flex items-center">
+                          <Clock size={12} className="mr-1" />
+                          Due date
+                        </Typography>
+                      </div>
                     </div>
                   </div>
-                  {reminder.note && <Typography className="text-gray-600 mt-3 pl-12">{reminder.note}</Typography>}
                 </div>
               ))}
           </div>
@@ -199,7 +225,7 @@ function Reminder() {
       <div className="fixed bottom-8 right-8 z-10">
         <Button
           size="lg"
-          className="bg-cyan-600 hover:bg-cyan-700 shadow-lg flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 hover:shadow-xl hover:scale-105"
+          className="bg-sky-600 hover:bg-sky-700 shadow-lg flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 hover:shadow-xl hover:scale-105"
           onClick={handleAddClick}
         >
           <Plus size={20} />
@@ -213,34 +239,40 @@ function Reminder() {
           onClick={handleModalClose}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-[450px] p-8"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-[500px] p-8"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
-              <Typography variant="h4" color="blue-gray" className="font-bold">
+              <Typography variant="h4" className="font-bold text-gray-800">
                 Add New Reminder
               </Typography>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <X size={20} className="text-gray-500" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
 
             <div className="flex flex-col gap-5">
-              <div className="relative">
+              <div className="space-y-2">
+                <Typography variant="small" className="font-medium text-gray-700">
+                  Select Room
+                </Typography>
                 <Select
-                  label="Select Room"
+                  label="Select a room"
                   value={room}
                   onChange={(val) => {
-                    setRoom(val);
-                    const selectedRoom = rooms.find((r) => r.roomId.toString() === val);
-                    setSelectedRenterId(selectedRoom?.renter?.renterId || null);
+                    setRoom(val)
+                    const selectedRoom = rooms.find((r) => r.roomId.toString() === val)
+                    setSelectedRenterId(selectedRoom?.renter?.renterId || null)
                   }}
-                  className="border-cyan-500 focus:border-cyan-600"
-                  containerProps={{ className: "min-w-[72px]" }}
-                  labelProps={{ className: "text-cyan-600" }}
+                  className={errors.room ? "border-red-500" : "border-sky-500"}
+                  containerProps={{ className: "min-w-full" }}
+                  labelProps={{ className: "text-sky-600" }}
                 >
                   {rooms.map((r) => (
                     <Option key={r.roomId} value={r.roomId.toString()}>
@@ -256,14 +288,16 @@ function Reminder() {
                 )}
               </div>
 
-              <div className="relative">
+              <div className="space-y-2">
+                <Typography variant="small" className="font-medium text-gray-700">
+                  Due Date
+                </Typography>
                 <Input
                   type="date"
-                  label="Due Date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="pl-3 border-cyan-500 focus:border-cyan-600"
-                  labelProps={{ className: "text-cyan-600" }}
+                  className={errors.date ? "border-red-500" : "border-sky-500"}
+                  labelProps={{ className: "text-sky-600" }}
                   error={!!errors.date}
                 />
                 {errors.date && (
@@ -274,14 +308,17 @@ function Reminder() {
                 )}
               </div>
 
-              <div className="relative">
+              <div className="space-y-2">
+                <Typography variant="small" className="font-medium text-gray-700">
+                  Note (Optional)
+                </Typography>
                 <Textarea
-                  label="Note (Optional)"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="pl-3 border-cyan-500 focus:border-cyan-600"
-                  labelProps={{ className: "text-cyan-600" }}
+                  className="border-sky-500 min-h-[100px]"
+                  labelProps={{ className: "text-sky-600" }}
                   rows={4}
+                  placeholder="Add any additional details here..."
                 />
               </div>
             </div>
@@ -296,7 +333,7 @@ function Reminder() {
               </Button>
               <Button
                 onClick={handleDone}
-                className="bg-cyan-600 hover:bg-cyan-700 rounded-full px-8 shadow-md hover:shadow-lg transition-all"
+                className="bg-sky-600 hover:bg-sky-700 rounded-full px-8 shadow-md hover:shadow-lg transition-all"
               >
                 Save Reminder
               </Button>
@@ -304,30 +341,8 @@ function Reminder() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            transform: scale(0.95);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
-  );
+  )
 }
 
-export default Reminder;
+export default Reminder
