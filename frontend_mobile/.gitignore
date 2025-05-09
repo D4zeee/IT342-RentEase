@@ -1,0 +1,17 @@
+# Ignore Gradle build and cache files
+.gradle/
+**/.gradle/
+*.lock
+*.bin
+*.log
+
+# Ignore IntelliJ/VS Code project settings (optional)
+.idea/
+.vscode/
+
+# Ignore environment variables
+.env
+
+# Ignore build folders
+/build/
+**/build/
