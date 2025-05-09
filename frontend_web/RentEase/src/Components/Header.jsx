@@ -1,43 +1,45 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
-import { Typography, Input } from "@material-tailwind/react"
-import { Search, ChevronDown, X, UserCircle } from "lucide-react"
-import axios from "axios"
-import Cookies from "js-cookie"
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Typography, Input } from "@material-tailwind/react";
+import { Search, ChevronDown, X, UserCircle } from "lucide-react";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 function Header() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [username, setUsername] = useState("")
-  const [ownerId, setOwnerId] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [isProfileModalOpen, setProfileModalOpen] = useState(false)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [username, setUsername] = useState("");
+  const [ownerId, setOwnerId] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-    const token = Cookies.get("token")
+    const token = Cookies.get("token");
     if (token) {
       axios
-        .get("http://localhost:8080/owners/current-user", {
+        .get(`${BASE_URL}/owners/current-user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
         .then((response) => {
-          setUsername(response.data.username)
-          setOwnerId(response.data.ownerId)
+          setUsername(response.data.username);
+          setOwnerId(response.data.ownerId);
         })
         .catch((error) => {
           if (error.response?.status === 403 || error.response?.status === 401) {
-            navigate("/login")
+            navigate("/login");
           }
-        })
+        });
     } else {
-      navigate("/login")
+      navigate("/login");
     }
-  }, [navigate])
+  }, [navigate]);
 
   const titleMap = {
     "/dashboard": "Dashboard",
@@ -45,37 +47,37 @@ function Header() {
     "/payments": "Payments",
     "/reminder": "Reminder",
     "/notifications": "Notification",
-  }
+  };
 
-  const title = titleMap[location.pathname] || "Dashboard"
+  const title = titleMap[location.pathname] || "Dashboard";
 
   const handleSearch = (e) => {
-    e.preventDefault()
-    console.log("Searching for:", searchQuery)
-  }
+    e.preventDefault();
+    console.log("Searching for:", searchQuery);
+  };
 
   const handleUpdateProfile = () => {
-    const token = Cookies.get("token")
+    const token = Cookies.get("token");
     axios
       .patch(
-        "http://localhost:8080/owners/update-profile",
+        `${BASE_URL}/owners/update-profile`,
         { username, password: newPassword },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
+        }
       )
       .then(() => {
-        alert("Profile updated successfully")
-        setProfileModalOpen(false)
-        setNewPassword("")
+        alert("Profile updated successfully");
+        setProfileModalOpen(false);
+        setNewPassword("");
       })
       .catch((err) => {
-        console.error(err)
-        alert("Failed to update profile")
-      })
-  }
+        console.error(err);
+        alert("Failed to update profile");
+      });
+  };
 
   return (
     <>
@@ -141,7 +143,6 @@ function Header() {
               </button>
             </div>
 
-            {/* Default Profile Icon */}
             <div className="flex flex-col items-center mb-6">
               <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300 shadow-sm mb-2">
                 <UserCircle className="h-10 w-10 text-gray-600" />
@@ -189,7 +190,7 @@ function Header() {
         </div>
       )}
     </>
-  )
+  );
 }
 
-export default Header
+export default Header;
