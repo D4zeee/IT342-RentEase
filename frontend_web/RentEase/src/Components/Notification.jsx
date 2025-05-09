@@ -3,17 +3,8 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import Cookies from "js-cookie"
-import {
-  BellRing,
-  Calendar,
-  Home,
-  CheckCircle,
-  XCircle,
-  Clock,
-  CheckCircle2,
-  CircleXIcon as XCircle2,
-} from "lucide-react"
-import { Typography, Chip, Button, Avatar } from "@material-tailwind/react"
+import { BellRing, Calendar, CheckCircle, XCircle, Clock, AlertCircle, CheckCheck, X } from "lucide-react"
+import { Card, CardBody, CardFooter, CardHeader, Typography, Button, Chip, Spinner } from "@material-tailwind/react"
 
 function Notification() {
   const [ownerId, setOwnerId] = useState(null)
@@ -95,40 +86,36 @@ function Notification() {
       .catch((err) => console.error("Error denying reminder:", err))
   }
 
-  // Helper function to get status badge
-  const getStatusBadge = (status) => {
+  const getStatusChip = (status) => {
     switch (status) {
       case "pending":
         return (
           <Chip
-            size="sm"
-            variant="ghost"
             value="Pending"
+            variant="outlined"
             color="amber"
             icon={<Clock className="h-3 w-3" />}
-            className="rounded-full"
+            className="flex items-center gap-1 text-amber-700 bg-amber-50"
           />
         )
       case "approved":
         return (
           <Chip
-            size="sm"
-            variant="ghost"
             value="Approved"
+            variant="outlined"
             color="green"
-            icon={<CheckCircle2 className="h-3 w-3" />}
-            className="rounded-full"
+            icon={<CheckCheck className="h-3 w-3" />}
+            className="flex items-center gap-1 text-green-700 bg-green-50"
           />
         )
       case "denied":
         return (
           <Chip
-            size="sm"
-            variant="ghost"
             value="Denied"
+            variant="outlined"
             color="red"
-            icon={<XCircle2 className="h-3 w-3" />}
-            className="rounded-full"
+            icon={<X className="h-3 w-3" />}
+            className="flex items-center gap-1 text-red-700 bg-red-50"
           />
         )
       default:
@@ -136,117 +123,116 @@ function Notification() {
     }
   }
 
+  const getBorderColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "border-l-amber-400"
+      case "approved":
+        return "border-l-green-400"
+      case "denied":
+        return "border-l-red-400"
+      default:
+        return ""
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Typography variant="h4" className="font-semibold text-gray-800 mb-6">
+          Booking Requests
+        </Typography>
+        <div className="flex justify-center items-center h-64">
+          <Spinner className="h-12 w-12 text-cyan-600" />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-gradient-to-b from-cyan-50 to-white p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
+      <Typography variant="h4" className="font-semibold text-gray-800 mb-6">
+        Booking Requests
+      </Typography>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-xl shadow-sm p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600 mb-4"></div>
-            <Typography color="gray" className="font-medium">
-              Loading applications...
-            </Typography>
-          </div>
-        ) : reminders.length === 0 ? (
-          <div className="text-center bg-white rounded-xl shadow-sm border border-gray-100 p-10 transition-all duration-300 hover:shadow-md">
-            <div className="flex justify-center mb-6">
-              <div className="p-6 bg-cyan-50 rounded-full">
-                <BellRing size={64} className="text-cyan-600" />
-              </div>
+      {reminders.length === 0 ? (
+        <Card className="bg-gray-50 border border-dashed border-gray-200">
+          <CardBody className="flex flex-col items-center justify-center py-12">
+            <div className="rounded-full bg-gray-100 p-3 mb-4">
+              <BellRing className="h-8 w-8 text-gray-400" />
             </div>
-            <Typography variant="h5" color="blue-gray" className="mb-3 font-semibold">
-              No Applications
+            <Typography variant="h5" className="text-gray-700 mb-1">
+              No booking requests
             </Typography>
-            <Typography color="gray" className="max-w-xs mx-auto">
-              You don't have any pending applications or payment notifications at the moment.
+            <Typography variant="paragraph" className="text-gray-500 text-center max-w-md">
+              You don't have any pending booking requests at the moment. New requests will appear here when guests book
+              your property.
             </Typography>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reminders.map((reminder) => (
-              <div
-                key={reminder.reminderId}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md"
-              >
-                <div className="p-5">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-4">
-                      <Avatar variant="circular" size="md" className="bg-cyan-100 p-2" alt="Room">
-                        <Home className="h-5 w-5 text-cyan-700" />
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <Typography variant="h6" color="blue-gray" className="font-semibold">
-                            Room #{reminder.room.roomId}
-                          </Typography>
-                          {getStatusBadge(reminder.approvalStatus)}
-                        </div>
-                        <Typography variant="small" color="gray" className="font-normal">
-                          {reminder.room.unitName}
-                        </Typography>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 bg-blue-gray-50 px-3 py-1 rounded-full">
-                      <Calendar className="text-blue-gray-500 w-4 h-4" />
-                      <Typography className="text-blue-gray-700 text-sm font-medium">
-                        {formatDate(reminder.dueDate)}
-                      </Typography>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-4 bg-blue-gray-50 rounded-lg">
-                    <Typography className="text-blue-gray-700">{reminder.note}</Typography>
-                  </div>
-
-                  {reminder.approvalStatus === "pending" && (
-                    <div className="mt-4 flex gap-3 justify-end">
-                      <Button
-                        variant="outlined"
-                        color="red"
-                        size="sm"
-                        className="flex items-center gap-2 rounded-lg"
-                        onClick={() => handleDeny(reminder.reminderId)}
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Deny
-                      </Button>
-                      <Button
-                        color="green"
-                        size="sm"
-                        className="flex items-center gap-2 rounded-lg"
-                        onClick={() => handleApprove(reminder.reminderId)}
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Approve
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {reminder.approvalStatus !== "pending" && (
-                  <div
-                    className={`px-5 py-3 border-t ${
-                      reminder.approvalStatus === "approved"
-                        ? "bg-green-50 border-green-100"
-                        : "bg-red-50 border-red-100"
-                    }`}
-                  >
-                    <Typography
-                      className={`text-sm font-medium ${
-                        reminder.approvalStatus === "approved" ? "text-green-700" : "text-red-700"
-                      }`}
-                    >
-                      {reminder.approvalStatus === "approved"
-                        ? "This application has been approved"
-                        : "This application has been denied"}
+          </CardBody>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {reminders.map((reminder) => (
+            <Card
+              key={reminder.reminderId}
+              className={`overflow-hidden transition-all duration-200 hover:shadow-md border-l-4 ${getBorderColor(
+                reminder.approvalStatus,
+              )}`}
+            >
+              <CardHeader floated={false} shadow={false} color="transparent" className="pb-2 pt-4 px-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <Typography variant="h6" className="text-lg font-medium">
+                      Room #{reminder.room.roomId} - {reminder.room.unitName}
+                    </Typography>
+                    <Typography variant="small" className="flex items-center gap-1 mt-1 text-gray-600">
+                      <Calendar className="h-3.5 w-3.5 text-gray-500" />
+                      <span>Due by {formatDate(reminder.dueDate)}</span>
                     </Typography>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                  {getStatusChip(reminder.approvalStatus)}
+                </div>
+              </CardHeader>
+
+              <CardBody className="py-2 px-6">
+                <Typography className="text-gray-700">{reminder.note}</Typography>
+              </CardBody>
+
+              {reminder.approvalStatus === "pending" && (
+                <CardFooter className="flex gap-2 pt-2 pb-4 px-6">
+                  <Button
+                    onClick={() => handleApprove(reminder.reminderId)}
+                    color="green"
+                    className="flex items-center gap-2 bg-green-600"
+                  >
+                    <CheckCircle className="h-4 w-4" /> Approve
+                  </Button>
+                  <Button
+                    onClick={() => handleDeny(reminder.reminderId)}
+                    color="red"
+                    className="flex items-center gap-2"
+                  >
+                    <XCircle className="h-4 w-4" /> Deny
+                  </Button>
+                </CardFooter>
+              )}
+
+              {reminder.approvalStatus !== "pending" && (
+                <CardFooter className="pt-0 pb-4 px-6">
+                  <Typography variant="small" className="flex items-center gap-1 text-gray-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>
+                      {reminder.approvalStatus === "approved"
+                        ? "You approved this booking request"
+                        : "You denied this booking request"}
+                    </span>
+                  </Typography>
+                </CardFooter>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
