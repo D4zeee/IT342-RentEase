@@ -46,7 +46,7 @@ function Header() {
     "/rooms": "Rooms",
     "/payments": "Payments",
     "/reminder": "Reminder",
-    "/notifications": "Notification",
+    "/notifications": "Applications",
   };
 
   const title = titleMap[location.pathname] || "Dashboard";
