@@ -72,7 +72,6 @@ public class securityConfig {
         corsConfiguration.addAllowedOrigin("http://192.168.1.5:8080");
         corsConfiguration.addAllowedOrigin("https://it-342-rent-ease-vdr4.vercel.app");
         corsConfiguration.addAllowedOrigin("*");
-        corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.setAllowCredentials(true); // Allow cookies/credentials
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
