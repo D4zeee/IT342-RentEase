@@ -19,7 +19,7 @@ function Notification() {
     }
 
     axios
-      .get("http://localhost:8080/owners/current-user", {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/owners/current-user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -36,7 +36,7 @@ function Notification() {
     const token = Cookies.get("token")
 
     axios
-      .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -62,7 +62,7 @@ function Notification() {
     const token = Cookies.get("token")
     axios
       .patch(
-        `http://localhost:8080/payment_reminders/${reminderId}/approve`,
+        `${import.meta.env.VITE_API_BASE_URL}/payment_reminders/${reminderId}/approve`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -76,7 +76,7 @@ function Notification() {
     const token = Cookies.get("token")
     axios
       .patch(
-        `http://localhost:8080/payment_reminders/${reminderId}/deny`,
+        `${import.meta.env.VITE_API_BASE_URL}/payment_reminders/${reminderId}/deny`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

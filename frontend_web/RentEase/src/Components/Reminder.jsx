@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 import { BellRing, Plus, Calendar, Home, AlertCircle, Clock, User } from 'lucide-react'
 import axios from "axios"
 import Cookies from "js-cookie"
-
-// Since we're not using the shadcn/ui components, let's revert to using the Material Tailwind components
 import { Typography, Button, Input, Textarea, Select, Option } from "@material-tailwind/react"
 
 function Reminder() {
@@ -28,7 +26,7 @@ function Reminder() {
     }
 
     axios
-      .get("http://localhost:8080/owners/current-user", {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/owners/current-user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -47,7 +45,7 @@ function Reminder() {
     const token = Cookies.get("token")
 
     axios
-      .get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/rooms/owner/${ownerId}/unavailable`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -63,7 +61,7 @@ function Reminder() {
     const token = Cookies.get("token")
 
     axios
-      .get(`http://localhost:8080/payment_reminders/owner/${ownerId}`, {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/payment_reminders/owner/${ownerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -117,7 +115,7 @@ function Reminder() {
     }
 
     axios
-      .post("http://localhost:8080/payment_reminders", payload)
+      .post(`${import.meta.env.VITE_API_BASE_URL}/payment_reminders`, payload)
       .then((res) => {
         setReminders((prev) => [...prev, res.data])
         setShowModal(false)
@@ -147,7 +145,6 @@ function Reminder() {
   return (
     <div className="relative min-h-[calc(100vh-60px)] bg-gradient-to-b from-sky-50 to-white flex flex-col items-center justify-start p-6">
       <div className="w-full max-w-4xl">
-
         {loading && (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-600"></div>
@@ -250,7 +247,18 @@ function Reminder() {
                 onClick={() => setShowModal(false)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-gray-500"
+                >
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>

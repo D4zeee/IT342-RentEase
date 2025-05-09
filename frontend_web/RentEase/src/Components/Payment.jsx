@@ -48,14 +48,14 @@ const Payments = () => {
 
     // Fetch owner and their rooms
     axios
-      .get("http://localhost:8080/owners/current-user", {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/owners/current-user`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
       .then((res) => {
         const ownerId = res.data.ownerId
-        return axios.get(`http://localhost:8080/rooms/owner/${ownerId}`, {
+        return axios.get(`${import.meta.env.VITE_API_BASE_URL}/rooms/owner/${ownerId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -71,7 +71,7 @@ const Payments = () => {
     // Fetch payment details from the database using paymentIntentId
     if (paymentIntentId) {
       axios
-        .get(`http://localhost:8080/payments/by-intent-id/${paymentIntentId}`, {
+        .get(`${import.meta.env.VITE_API_BASE_URL}/payments/by-intent-id/${paymentIntentId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -95,7 +95,7 @@ const Payments = () => {
 
     // Fetch payment history from the backend
     axios
-      .get("http://localhost:8080/api/payment-history", {
+      .get(`${import.meta.env.VITE_API_BASE_URL}/api/payment-history`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -118,7 +118,6 @@ const Payments = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-
       <Tabs value={activeTab} onChange={(value) => setActiveTab(value)}>
         <TabsBody>
           <TabPanel value="history">
