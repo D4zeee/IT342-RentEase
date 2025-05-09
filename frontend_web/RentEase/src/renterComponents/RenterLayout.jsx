@@ -1,123 +1,27 @@
-import { useState } from "react";
-import {
-    Card,
-    Typography,
-    List,
-    ListItem,
-    ListItemPrefix,
-    Drawer,
-} from "@material-tailwind/react";
-import {
-    Home,
-    UserCircle,
-    Bell,
-    LogOut, // Replace ArrowLeftOnRectangle with LogOut
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import RenterSidebar from "./RenterSidebar";
+import { Typography } from "@material-tailwind/react";
 
-function RenterLayout({ children }) {
+const RenterLayout = () => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        Cookies.remove("renterToken");
-        navigate("/renter-login");
-    };
 
     const openDrawer = () => setIsDrawerOpen(true);
     const closeDrawer = () => setIsDrawerOpen(false);
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
-            {/* Sidebar for Desktop */}
-            <Card className="hidden lg:block h-screen w-64 p-4 shadow-xl shadow-blue-gray-900/5">
-                <div className="mb-2 p-4">
-                    <Typography variant="h5" color="blue-gray">
-                        Renter Dashboard
-                    </Typography>
-                </div>
-                <List>
-                    <Link to="/renter-dashboard">
-                        <ListItem>
-                            <ListItemPrefix>
-                                <Home className="h-5 w-5" />
-                            </ListItemPrefix>
-                            Dashboard
-                        </ListItem>
-                    </Link>
-                    <Link to="/renter-dashboard/notifications">
-                        <ListItem>
-                            <ListItemPrefix>
-                                <Bell className="h-5 w-5" />
-                            </ListItemPrefix>
-                            Notifications
-                        </ListItem>
-                    </Link>
-                    <Link to="/renter-dashboard/profile">
-                        <ListItem>
-                            <ListItemPrefix>
-                                <UserCircle className="h-5 w-5" />
-                            </ListItemPrefix>
-                            Profile
-                        </ListItem>
-                    </Link>
-                    <ListItem onClick={handleLogout}>
-                        <ListItemPrefix>
-                            <LogOut className="h-5 w-5" /> {/* Updated icon */}
-                        </ListItemPrefix>
-                        Logout
-                    </ListItem>
-                </List>
-            </Card>
+        <div className="flex h-screen overflow-hidden bg-gray-50">
+            {/* Sidebar - fixed position */}
+            <RenterSidebar
+                isDrawerOpen={isDrawerOpen}
+                openDrawer={openDrawer}
+                closeDrawer={closeDrawer}
+            />
 
-            {/* Drawer for Mobile */}
-            <Drawer open={isDrawerOpen} onClose={closeDrawer} className="lg:hidden">
-                <Card className="h-full w-64 p-4 shadow-xl shadow-blue-gray-900/5">
-                    <div className="mb-2 p-4">
-                        <Typography variant="h5" color="blue-gray">
-                            Renter Dashboard
-                        </Typography>
-                    </div>
-                    <List>
-                        <Link to="/renter-dashboard">
-                            <ListItem onClick={closeDrawer}>
-                                <ListItemPrefix>
-                                    <Home className="h-5 w-5" />
-                                </ListItemPrefix>
-                                Dashboard
-                            </ListItem>
-                        </Link>
-                        <Link to="/renter-notif">
-                            <ListItem onClick={closeDrawer}>
-                                <ListItemPrefix>
-                                    <Bell className="h-5 w-5" />
-                                </ListItemPrefix>
-                                Notifications
-                            </ListItem>
-                        </Link>
-                        <Link to="/renter-dashboard/profile">
-                            <ListItem onClick={closeDrawer}>
-                                <ListItemPrefix>
-                                    <UserCircle className="h-5 w-5" />
-                                </ListItemPrefix>
-                                Profile
-                            </ListItem>
-                        </Link>
-                        <ListItem onClick={() => { handleLogout(); closeDrawer(); }}>
-                            <ListItemPrefix>
-                                <LogOut className="h-5 w-5" /> {/* Updated icon */}
-                            </ListItemPrefix>
-                            Logout
-                        </ListItem>
-                    </List>
-                </Card>
-            </Drawer>
-
-            {/* Main Content Area */}
-            <div className="flex-1 p-6">
+            {/* Main content area with left margin to account for sidebar */}
+            <div className="flex flex-col flex-1 lg:ml-[256px] w-full lg:w-[calc(100%-256px)]">
                 {/* Mobile Header with Drawer Toggle */}
-                <div className="lg:hidden flex justify-between items-center mb-4">
+                <div className="lg:hidden flex justify-between items-center p-6 bg-white shadow-sm">
                     <Typography variant="h5" color="blue-gray">
                         Renter Dashboard
                     </Typography>
@@ -139,13 +43,15 @@ function RenterLayout({ children }) {
                     </button>
                 </div>
 
-                {/* Render child components (e.g., RenterNotifications) */}
-                <div className="max-w-7xl mx-auto">
-                    {children}
-                </div>
+                {/* Content area - scrollable */}
+                <main className="flex-1 overflow-y-auto p-6">
+                    <div className="max-w-7xl mx-auto">
+                        <Outlet />
+                    </div>
+                </main>
             </div>
         </div>
     );
-}
+};
 
 export default RenterLayout;

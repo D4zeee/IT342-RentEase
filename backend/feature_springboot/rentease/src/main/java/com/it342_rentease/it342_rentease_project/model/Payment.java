@@ -8,7 +8,7 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int paymentId;
+    private Long paymentId;
 
     private float amount;
     private String status;
@@ -27,7 +27,8 @@ public class Payment {
     public Payment() {
     }
 
-    public Payment(float amount, String status, String paymentMethod, String paymentIntentId, LocalDate paidDate, Room room) {
+    public Payment(float amount, String status, String paymentMethod, String paymentIntentId, LocalDate paidDate,
+            Room room) {
         this.amount = amount;
         this.status = status;
         this.paymentMethod = paymentMethod;
@@ -36,11 +37,11 @@ public class Payment {
         this.room = room;
     }
 
-    public int getPaymentId() {
+    public Long getPaymentId() {
         return paymentId;
     }
 
-    public void setPaymentId(int paymentId) {
+    public void setPaymentId(Long paymentId) {
         this.paymentId = paymentId;
     }
 
