@@ -140,14 +140,6 @@ function Reminder() {
   return (
     <div className="relative min-h-[calc(100vh-60px)] bg-gradient-to-b from-cyan-50 to-white flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-3xl">
-        <div className="mb-8">
-          <Typography variant="h3" color="blue-gray" className="text-center font-bold">
-            Payment Reminders
-          </Typography>
-          <Typography color="gray" className="text-center mt-2">
-            Manage payment reminders for your properties
-          </Typography>
-        </div>
 
         {loading && (
           <div className="flex justify-center items-center h-40">

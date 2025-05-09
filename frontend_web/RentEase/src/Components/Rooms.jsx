@@ -322,11 +322,6 @@ function Rooms() {
 
   return (
     <div className="relative p-4 md:p-8 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Properties</h1>
-        <p className="text-gray-600 mt-1">Manage your rental units and rooms</p>
-      </div>
-
       {ownerLoading ? (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] bg-white rounded-xl shadow-sm border border-gray-100 p-10">
           <LoadingSpinner />

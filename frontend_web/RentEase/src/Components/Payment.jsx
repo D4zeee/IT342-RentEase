@@ -118,14 +118,6 @@ const Payments = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <Typography variant="h2" color="blue-gray" className="mb-2">
-          Payments Dashboard
-        </Typography>
-        <Typography variant="paragraph" color="gray" className="mb-6">
-          Welcome to RentEase! View your payment status and history below.
-        </Typography>
-      </div>
 
       <Tabs value={activeTab} onChange={(value) => setActiveTab(value)}>
         <TabsBody>

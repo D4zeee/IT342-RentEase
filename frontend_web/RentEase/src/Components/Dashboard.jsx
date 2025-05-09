@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Cookies from "js-cookie";
+import Cookies from "js-cookies";
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -14,6 +14,7 @@ import {
 const Dashboard = () => {
   const [stats, setStats] = useState({ total: 0, available: 0, rented: 0, revenue: 0 });
   const [paymentHistory, setPaymentHistory] = useState([]);
+  const [featuredRooms, setFeaturedRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -41,6 +42,12 @@ const Dashboard = () => {
         // Calculate total revenue from payment history
         const totalRevenue = paymentResponse.data.reduce((sum, payment) => sum + (payment.rentalFee || 0), 0);
         setStats((prevStats) => ({ ...prevStats, revenue: totalRevenue }));
+
+        // Fetch featured (rented) rooms
+        const featuredRoomsResponse = await axios.get(`http://localhost:8080/rooms/owner/${ownerId}/unavailable`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFeaturedRooms(featuredRoomsResponse.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
       } finally {
@@ -66,7 +73,6 @@ const Dashboard = () => {
   return (
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-
         {/* Overview Cards */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-700 mb-4">Overview</h2>
@@ -147,25 +153,43 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Occupancy Statistics */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-700">Occupancy Statistics</h2>
-            <div className="bg-gray-100 rounded-lg px-3 py-1 text-sm text-gray-600 flex items-center">
-              <CalendarDaysIcon className="h-4 w-4 mr-1" />
-              Monthly
-            </div>
-          </div>
-          <div className="h-64">
-            <div className="flex h-full items-end">
-              {monthlyOccupancy.map((value, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-blue-500 rounded-t-sm mx-1" style={{ height: `${value}%` }}></div>
-                  <div className="text-xs text-gray-500 mt-2">{months[index]}</div>
+        {/* Featured Rooms Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">Featured Rooms (Rented)</h2>
+          {isLoading ? (
+            <p className="text-gray-600">Loading featured rooms...</p>
+          ) : featuredRooms.length === 0 ? (
+            <p className="text-gray-600">No rented rooms available.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {featuredRooms.map((room) => (
+                <div
+                  key={room.roomId}
+                  className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">{room.unitName}</p>
+                      <p className="text-sm text-gray-600 mt-1">{room.city}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Renter: {room.renter ? `${room.renter.firstName} ${room.renter.lastName}` : "N/A"}
+                      </p>
+                      <p className="text-sm font-medium text-gray-700 mt-2">
+                        ₱{room.rentalFee.toLocaleString()} / month
+                      </p>
+                    </div>
+                    {room.imagePaths && room.imagePaths.length > 0 && (
+                      <img
+                        src={room.imagePaths[0]}
+                        alt={room.unitName}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

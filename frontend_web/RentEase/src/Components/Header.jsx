@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Typography, Avatar, Input } from "@material-tailwind/react"
-import { Search, ChevronDown, X } from "lucide-react"
+import { Typography, Input } from "@material-tailwind/react"
+import { Search, ChevronDown, X, UserCircle } from "lucide-react"
 import axios from "axios"
 import Cookies from "js-cookie"
 
@@ -102,14 +102,18 @@ function Header() {
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setProfileModalOpen(true)}>
-            <Avatar
-              src="/assets/img/profile.jpg"
-              alt={username || "User"}
-              className="w-10 h-10 border border-gray-200 shadow-sm"
-            />
+          <div
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => setProfileModalOpen(true)}
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300 shadow-sm">
+              <UserCircle className="h-6 w-6 text-gray-600" />
+            </div>
             <div className="flex flex-col">
-              <Typography variant="small" className="font-semibold text-gray-800 group-hover:text-gray-900">
+              <Typography
+                variant="small"
+                className="font-semibold text-gray-800 group-hover:text-gray-900"
+              >
                 {username || "Guest"}
               </Typography>
               <Typography variant="small" className="text-xs text-gray-500">
@@ -121,7 +125,6 @@ function Header() {
         </div>
       </header>
 
-      {/* Profile Modal with reduced opacity and blur effect */}
       {isProfileModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div
@@ -136,6 +139,16 @@ function Header() {
               >
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            {/* Default Profile Icon */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300 shadow-sm mb-2">
+                <UserCircle className="h-10 w-10 text-gray-600" />
+              </div>
+              <Typography variant="small" className="text-gray-600">
+                (Default Profile Icon)
+              </Typography>
             </div>
 
             <div className="mb-4">
