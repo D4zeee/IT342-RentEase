@@ -58,4 +58,4 @@ RentEase is an intuitive and secure mobile application and web platform designed
   </table>
 </p>
 
-Developed by RentEase Team 🚀
+Developed by RentEase Team 🚀🚀🚀
