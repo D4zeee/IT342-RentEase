@@ -45,8 +45,10 @@ function LandingPage() {
             </h1>
 
             <p className="text-base md:text-lg mb-8 text-gray-200 leading-relaxed max-w-xl">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cursus imperdiet sed id elementum. Quam vel
-              aliquam sit vulputate. Faucibus nec gravida ipsum pulvinar vel non.
+              Welcome to your all-in-one space for room management. Whether you're listing a new unit 
+              or keeping track of your current rentals, RentEase simplifies the entire process. Add, update, 
+              or remove room listings with just a few clicks. Monitor room availability, rental fees, 
+              and booking statuses in real-time—all from a single dashboard. Designed for ease, built for control.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
